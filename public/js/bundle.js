@@ -118,9 +118,15 @@
 					ctx.lineTo(x, heights[i]);
 					ctx.stroke();
 					ctx.closePath();
+
+					var normalizedHeight = Math.max(0, Math.min(1, (canvas.height - heights[i]) / canvas.height));
+					ctx.font = '16px sans-serif';
+					ctx.fillStyle = 'white';
+					ctx.fillText(normalizedHeight.toFixed(2), x + 8, 24);
 				}
 
 				if (_this.isMouseDown) {
+					ctx.fillStyle = 'black';
 					ctx.beginPath();
 					ctx.arc(_this.mouseX, _this.mouseY, radius, 0, 2 * Math.PI, false);
 					ctx.fill();
