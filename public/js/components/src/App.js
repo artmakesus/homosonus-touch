@@ -45,7 +45,7 @@ class App extends React.Component {
 		ctx.strokeStyle = 'white';
 
 		let sensorDistance = canvas.width / App.NUM_SENSORS;
-		let radius = canvas.width * 0.075;
+		let radius = canvas.width * 0.05;
 
 		let heights = [];
 		for (let i = 0; i < App.NUM_SENSORS; i++) {

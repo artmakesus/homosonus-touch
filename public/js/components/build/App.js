@@ -47,7 +47,7 @@ var App = (function (_React$Component) {
 			ctx.strokeStyle = 'white';
 
 			var sensorDistance = canvas.width / App.NUM_SENSORS;
-			var radius = canvas.width * 0.075;
+			var radius = canvas.width * 0.05;
 
 			var heights = [];
 			for (var i = 0; i < App.NUM_SENSORS; i++) {
