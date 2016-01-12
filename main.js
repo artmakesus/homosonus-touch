@@ -1,26 +1,24 @@
 'use strict';
 
 var osc = require('node-osc');
+var client = new osc.Client('localhost', 7070);
 var express = require('express');
 var app = express();
-
 var bodyParser = require('body-parser');
-var urlencodedParser = bodyParser.urlencoded({ extended: false });
-
-var client = new osc.Client('localhost', 7070);
 
 app.use(express.static(__dirname + '/public'));
+app.use(bodyParser.urlencoded({ extended: false }));
 
-app.post('/data', urlencodedParser, function(req, res) {
+app.post('/data', function(req, res) {
 	try {
-		var data = JSON.parse(req.body.data);
-		for (let i = 0; i < data.length; i++) {
-			client.send('/data/' + i, data[i], function() {
-			});
+		let heights = JSON.parse(req.body.heights);
+		for (let i = 0; i < heights.length; i++) {
+			client.send('/data/' + i, heights[i]);
 		}
 	} catch (error) {
 		console.log(error);
 	}
+	res.sendStatus(200);
 });
 
 app.listen(8080, function() {

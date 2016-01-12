@@ -107,7 +107,7 @@ var App = (function (_React$Component) {
 			$.ajax({
 				url: '/data',
 				method: 'POST',
-				data: { data: JSON.stringify(heights) }
+				data: { heights: JSON.stringify(heights) }
 			}).done(function () {}).fail(function (resp) {
 				console.log('Failed');
 			});
