@@ -58,17 +58,48 @@
 	var ReactDOM = __webpack_require__(158);
 	var $ = __webpack_require__(159);
 
-	function intersect(x1, x2, y2, radius) {
-		if (x1 < x2 - radius || x1 > x2 + radius) {
+	var circles = [];
+
+	function intersect(x1, circles, radius) {
+		if (!circles || circles.length == 0) {
 			return null;
 		}
 
-		var dx = x2 - x1;
-		var dy = Math.sqrt(radius * radius - dx * dx);
-		var angle = Math.atan2(dy, dx);
+		var finalX = -999999;
+		var finalY = -999999;
+		for (var i in circles) {
+			var x2 = circles[i].x * canvas.width;
+			var y2 = circles[i].y * canvas.height;
+			var _radius = circles[i].radius;
+			if (x1 < x2 - _radius || x1 > x2 + _radius) {
+				continue;
+			}
+
+			var dx = x2 - x1;
+			var dy = Math.sqrt(_radius * _radius - dx * dx);
+			var angle = Math.atan2(dy, dx);
+
+			var x = x2 + Math.cos(angle) * _radius;
+			var y = y2 + Math.sin(angle) * _radius;
+			if (y > finalY) {
+				finalX = x;
+				finalY = y;
+			}
+		}
+
+		if (finalX <= -999999 && finalY <= -999999) {
+			return null;
+		}
+		return { x: finalX, y: finalY };
+	}
+
+	function contains(mouseX, mouseY, circle) {
+		var dx = circle.x * canvas.width - mouseX;
+		var dy = circle.y * canvas.height - mouseY;
 		return {
-			x: x2 + Math.cos(angle) * radius,
-			y: y2 + Math.sin(angle) * radius
+			dx: dx,
+			dy: dy,
+			isContaining: Math.sqrt(dx * dx + dy * dy) < canvas.width * App.CIRCLE_RADIUS_FACTOR
 		};
 	}
 
@@ -87,19 +118,17 @@
 			}
 
 			return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(App)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this), _this.draw = function () {
-				var canvas = _this.refs.canvas;
 				var ctx = _this.ctx;
 				ctx.fillStyle = 'black';
 				ctx.strokeStyle = 'white';
 
 				var sensorDistance = canvas.width / App.NUM_SENSORS;
-				var radius = canvas.width * 0.05;
 
 				var heights = [];
 				for (var i = 0; i < App.NUM_SENSORS; i++) {
-					if (_this.isMouseDown) {
+					if (circles && circles.length > 0) {
 						var x = i * sensorDistance + sensorDistance * 0.5;
-						var p = intersect(x, _this.mouseX, _this.mouseY, radius);
+						var p = intersect(x, circles);
 						if (p) {
 							heights.push(p.y);
 						} else {
@@ -110,7 +139,10 @@
 					}
 				}
 
-				ctx.fillRect(0, 0, _this.refs.canvas.width, _this.refs.canvas.height);
+				ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+				var canvasWidth = canvas.width;
+				var canvasHeight = canvas.height;
 				for (var i = 0; i < App.NUM_SENSORS; i++) {
 					var x = i * sensorDistance + sensorDistance * 0.5;
 					ctx.beginPath();
@@ -125,10 +157,10 @@
 					ctx.fillText(normalizedHeight.toFixed(2), x + 8, 24);
 				}
 
-				if (_this.isMouseDown) {
+				for (var i in circles) {
 					ctx.fillStyle = 'black';
 					ctx.beginPath();
-					ctx.arc(_this.mouseX, _this.mouseY, radius, 0, 2 * Math.PI, false);
+					ctx.arc(circles[i].x * canvas.width, circles[i].y * canvas.height, circles[i].radius, 0, 2 * Math.PI, false);
 					ctx.fill();
 					ctx.stroke();
 				}
@@ -137,19 +169,55 @@
 
 				requestAnimationFrame(_this.draw);
 			}, _this.resize = function () {
-				_this.refs.canvas.width = window.innerWidth;
-				_this.refs.canvas.height = window.innerHeight;
+				canvas.width = window.innerWidth;
+				canvas.height = window.innerHeight;
+				for (var i in circles) {
+					circles[i].radius = canvas.width * App.CIRCLE_RADIUS_FACTOR;
+				}
 			}, _this.mousedown = function (event) {
 				_this.isMouseDown = true;
-				_this.mouseX = event.clientX;
-				_this.mouseY = event.clientY;
+				for (var i in circles) {
+					var result = contains(event.clientX, event.clientY, circles[i]);
+					if (!result.isContaining) {
+						continue;
+					}
+
+					if (result.isContaining) {
+						_this.draggedCircle = {
+							dx: result.dx,
+							dy: result.dy,
+							circle: i
+						};
+						return;
+					}
+				}
+
+				_this.draggedCircle = null;
 			}, _this.mouseup = function (event) {
 				_this.isMouseDown = false;
-				_this.mouseX = event.clientX;
-				_this.mouseY = event.clientY;
 			}, _this.mousemove = function (event) {
-				_this.mouseX = event.clientX;
-				_this.mouseY = event.clientY;
+				if (_this.isMouseDown) {
+					var c = _this.draggedCircle;
+					if (c) {
+						circles[c.circle].x = (event.clientX + c.dx) / canvas.width;
+						circles[c.circle].y = (event.clientY + c.dy) / canvas.height;
+					}
+				}
+			}, _this.dblclick = function (event) {
+				circles.push({
+					x: event.clientX / canvas.width,
+					y: event.clientY / canvas.height,
+					radius: canvas.width * App.CIRCLE_RADIUS_FACTOR
+				});
+			}, _this.keyup = function (event) {
+				var key = event.which || event.keyCode;
+				switch (key) {
+					case 8:
+						if (_this.draggedCircle) {
+							circles.splice(_this.draggedCircle.circle, 1);
+						}
+						break;
+				}
 			}, _this.updateOSC = function (heights) {
 				// Normalize data
 				for (var i = 0; i < heights.length; i++) {
@@ -160,7 +228,9 @@
 					url: '/data',
 					method: 'POST',
 					data: { heights: JSON.stringify(heights) }
-				}).done(function () {}).fail(function (resp) {
+				}).done(function () {
+					// do nothing
+				}).fail(function (resp) {
 					console.log('Failed');
 				});
 			}, _temp), _possibleConstructorReturn(_this, _ret);
@@ -183,9 +253,10 @@
 				window.addEventListener('mouseup', this.mouseup);
 				window.addEventListener('mousemove', this.mousemove);
 				window.addEventListener('dblclick', this.dblclick);
+				window.addEventListener('keyup', this.keyup);
 
 				// Handle animation
-				this.ctx = this.refs.canvas.getContext('2d');
+				this.ctx = canvas.getContext('2d');
 				requestAnimationFrame(this.draw);
 			}
 		}]);
@@ -194,6 +265,7 @@
 	})(React.Component);
 
 	App.NUM_SENSORS = 10;
+	App.CIRCLE_RADIUS_FACTOR = 0.05;
 
 	ReactDOM.render(React.createElement(App, null), document.getElementById('root'));
 

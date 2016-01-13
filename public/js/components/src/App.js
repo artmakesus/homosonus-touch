@@ -1,27 +1,59 @@
+'use strict';
+
 let React = require('react');
 let ReactDOM = require('react-dom');
 let $ = require('jquery');
 
-function intersect(x1, x2, y2, radius) {
-	if (x1 < x2 - radius || x1 > x2 + radius) {
+let circles = [];
+
+function intersect(x1, circles, radius) {
+	if (!circles || circles.length == 0) {
 		return null;
 	}
 
-	let dx = x2 - x1;
-	let dy = Math.sqrt(radius * radius - dx * dx);
-	let angle = Math.atan2(dy, dx);
+	let finalX = -999999;
+	let finalY = -999999;
+	for (let i in circles) {
+		let x2 = circles[i].x * canvas.width;
+		let y2 = circles[i].y * canvas.height;
+		let radius = circles[i].radius;
+		if (x1 < x2 - radius || x1 > x2 + radius) {
+			continue;
+		}
+
+		let dx = x2 - x1;
+		let dy = Math.sqrt(radius * radius - dx * dx);
+		let angle = Math.atan2(dy, dx);
+
+		let x = x2 + Math.cos(angle) * radius;
+		let y = y2 + Math.sin(angle) * radius;
+		if (y > finalY) {
+			finalX = x;
+			finalY = y;
+		}
+	}
+
+	if (finalX <= -999999 && finalY <= -999999) {
+		return null;
+	}
+	return { x: finalX, y: finalY };
+}
+
+function contains(mouseX, mouseY, circle) {
+	let dx = circle.x * canvas.width - mouseX;
+	let dy = circle.y * canvas.height - mouseY;
 	return {
-		x: x2 + Math.cos(angle) * radius,
-		y: y2 + Math.sin(angle) * radius,
-	};
+		dx: dx,
+		dy: dy,
+		isContaining: Math.sqrt(dx * dx + dy * dy) < canvas.width * App.CIRCLE_RADIUS_FACTOR,
+	}
 }
 
 class App extends React.Component {
 	static NUM_SENSORS = 10
+	static CIRCLE_RADIUS_FACTOR = 0.05
 	render() {
-		return (
-			<canvas id='canvas' ref='canvas'></canvas>
-		)
+		return <canvas id='canvas' ref='canvas'></canvas>
 	}
 	componentDidMount() {
 		// Handle window resize
@@ -33,25 +65,24 @@ class App extends React.Component {
 		window.addEventListener('mouseup', this.mouseup);
 		window.addEventListener('mousemove', this.mousemove);
 		window.addEventListener('dblclick', this.dblclick);
+		window.addEventListener('keyup', this.keyup);
 
 		// Handle animation
-		this.ctx = this.refs.canvas.getContext('2d');
+		this.ctx = canvas.getContext('2d');
 		requestAnimationFrame(this.draw);
 	}
 	draw = () => {
-		let canvas = this.refs.canvas;
 		let ctx = this.ctx;
 		ctx.fillStyle = 'black';
 		ctx.strokeStyle = 'white';
 
 		let sensorDistance = canvas.width / App.NUM_SENSORS;
-		let radius = canvas.width * 0.05;
 
 		let heights = [];
 		for (let i = 0; i < App.NUM_SENSORS; i++) {
-			if (this.isMouseDown) {
+			if (circles && circles.length > 0) {
 				let x = i * sensorDistance + sensorDistance * 0.5;
-				let p = intersect(x, this.mouseX, this.mouseY, radius);
+				let p = intersect(x, circles);
 				if (p) {
 					heights.push(p.y);
 				} else {
@@ -62,7 +93,10 @@ class App extends React.Component {
 			}
 		}
 
-		ctx.fillRect(0, 0, this.refs.canvas.width, this.refs.canvas.height);
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+		let canvasWidth = canvas.width;
+		let canvasHeight = canvas.height;
 		for (let i = 0; i < App.NUM_SENSORS; i++) {
 			let x = i * sensorDistance + sensorDistance * 0.5;
 			ctx.beginPath();
@@ -77,10 +111,10 @@ class App extends React.Component {
 			ctx.fillText(normalizedHeight.toFixed(2), x + 8, 24);
 		}
 
-		if (this.isMouseDown) {
+		for (let i in circles) {
 			ctx.fillStyle = 'black';
 			ctx.beginPath();
-			ctx.arc(this.mouseX, this.mouseY, radius, 0, 2 * Math.PI, false);
+			ctx.arc(circles[i].x * canvas.width, circles[i].y * canvas.height, circles[i].radius, 0, 2 * Math.PI, false);
 			ctx.fill();
 			ctx.stroke();
 		}
@@ -90,22 +124,60 @@ class App extends React.Component {
 		requestAnimationFrame(this.draw);
 	}
 	resize = () => {
-		this.refs.canvas.width = window.innerWidth;
-		this.refs.canvas.height = window.innerHeight;
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight;
+		for (let i in circles) {
+			circles[i].radius = canvas.width * App.CIRCLE_RADIUS_FACTOR;
+		}
 	}
 	mousedown = (event) => {
 		this.isMouseDown = true;
-		this.mouseX = event.clientX;
-		this.mouseY = event.clientY;
+		for (let i in circles) {
+			let result = contains(event.clientX, event.clientY, circles[i]);
+			if (!result.isContaining) {
+				continue;
+			}
+
+			if (result.isContaining) {
+				this.draggedCircle = {
+					dx: result.dx,
+					dy: result.dy,
+					circle: i,
+				};
+				return;
+			}
+		}
+
+		this.draggedCircle = null;
 	}
 	mouseup = (event) => {
 		this.isMouseDown = false;
-		this.mouseX = event.clientX;
-		this.mouseY = event.clientY;
 	}
 	mousemove = (event) => {
-		this.mouseX = event.clientX;
-		this.mouseY = event.clientY;
+		if (this.isMouseDown) {
+			let c = this.draggedCircle;
+			if (c) {
+				circles[c.circle].x = (event.clientX + c.dx) / canvas.width;
+				circles[c.circle].y = (event.clientY + c.dy) / canvas.height;
+			}
+		}
+	}
+	dblclick = (event) => {
+		circles.push({
+			x: event.clientX / canvas.width,
+			y: event.clientY / canvas.height,
+			radius: canvas.width * App.CIRCLE_RADIUS_FACTOR,
+		});
+	}
+	keyup = (event) => {
+		let key = event.which || event.keyCode;
+		switch (key) {
+		case 8:
+			if (this.draggedCircle) {
+				circles.splice(this.draggedCircle.circle, 1);
+			}
+			break;
+		}
 	}
 	updateOSC = (heights) => {
 		// Normalize data
@@ -118,6 +190,7 @@ class App extends React.Component {
 			method: 'POST',
 			data: { heights: JSON.stringify(heights) },
 		}).done(function() {
+			// do nothing
 		}).fail(function(resp) {
 			console.log('Failed');
 		});
