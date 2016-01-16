@@ -11,9 +11,13 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 app.post('/data', function(req, res) {
 	try {
-		let heights = JSON.parse(req.body.heights);
-		for (let i = 0; i < heights.length; i++) {
-			client.send('/data/' + i, heights[i]);
+		let frontHeights = JSON.parse(req.body.frontHeights);
+		let backHeights = JSON.parse(req.body.backHeights);
+		for (let i = 0; i < frontHeights.length; i++) {
+			client.send('/front/' + i, frontHeights[i]);
+		}
+		for (let i = 0; i < backHeights.length; i++) {
+			client.send('/back/' + i, backHeights[i]);
 		}
 	} catch (error) {
 		console.log(error);
