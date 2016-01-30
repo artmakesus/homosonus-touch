@@ -42,9 +42,9 @@ serialport.list(function(error, ports) {
 
 						let nDistanceSensorsHalved = (nDistanceSensors * 0.5).toFixed(0);
 						if (index >= nDistanceSensorsHalved) {
-							oscClient.send('/front/' + index - nDistanceSensorsHalved, distanceInMeters);
+							oscClient.send('/front', index - nDistanceSensorsHalved, distanceInMeters);
 						} else {
-							oscClient.send('/back/' + index, distanceInMeters);
+							oscClient.send('/back', index, distanceInMeters);
 						}
 					}
 				});
@@ -62,10 +62,10 @@ if (bSimulate) {
 			let frontHeights = JSON.parse(req.body.frontHeights);
 			let backHeights = JSON.parse(req.body.backHeights);
 			for (let i = 0; i < frontHeights.length; i++) {
-				client.send('/front/' + i, frontHeights[i]);
+				client.send('/front', i, frontHeights[i]);
 			}
 			for (let i = 0; i < backHeights.length; i++) {
-				client.send('/back/' + i, backHeights[i]);
+				client.send('/back', i, backHeights[i]);
 			}
 		} catch (error) {
 			console.log(error);
