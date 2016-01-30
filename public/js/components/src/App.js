@@ -1,11 +1,11 @@
-'use strict';
+'use strict'
 
-let React = require('react');
-let ReactDOM = require('react-dom');
-let $ = require('jquery');
+import React from 'react'
+import ReactDOM from 'react-dom'
+import $ from 'jquery'
 
 let frontCircles = [],
-	backCircles = [];
+    backCircles = [];
 
 function intersect(x1, circles, radius) {
 	if (!circles || circles.length == 0) {
@@ -51,8 +51,8 @@ function contains(mouseX, mouseY, circle) {
 }
 
 class App extends React.Component {
-	static NUM_SENSORS = 10
-	static CIRCLE_RADIUS_FACTOR = 0.05
+	static NUM_SENSORS = 10;
+	static CIRCLE_RADIUS_FACTOR = 0.05;
 	render() {
 		return <canvas id='canvas' ref='canvas'></canvas>
 	}
@@ -152,7 +152,7 @@ class App extends React.Component {
 		this.updateOSC(frontHeights, backHeights);
 
 		requestAnimationFrame(this.draw);
-	}
+	};
 	resize = () => {
 		canvas.width = window.innerWidth;
 		canvas.height = window.innerHeight;
@@ -165,7 +165,7 @@ class App extends React.Component {
 		for (let i in backCircles) {
 			backCircles[i].radius = radius;
 		}
-	}
+	};
 	mousedown = (event) => {
 		this.isMouseDown = true;
 
@@ -210,11 +210,11 @@ class App extends React.Component {
 		}
 
 		this.draggedCircle = null;
-	}
+	};
 	mouseup = (event) => {
 		this.isMouseDown = false;
 		this.draggingFrontCircle = false;
-	}
+	};
 	mousemove = (event) => {
 		if (this.isMouseDown) {
 			let isFrontCircle = this.draggingFrontCircle;
@@ -233,10 +233,10 @@ class App extends React.Component {
 		}
 		this.x = event.clientX;
 		this.y = event.clientY;
-	}
+	};
 	dblclick = (event) => {
 		this.addFrontCircle();
-	}
+	};
 	keyup = (event) => {
 		let key = event.which || event.keyCode;
 		switch (key) {
@@ -254,7 +254,7 @@ class App extends React.Component {
 		default:
 			console.log(key);
 		}
-	}
+	};
 	updateOSC = (frontHeights, backHeights) => {
 		// Normalize data
 		for (let i = 0; i < frontHeights.length; i++) {
@@ -276,21 +276,21 @@ class App extends React.Component {
 		}).fail(function(resp) {
 			console.log('Failed to send height data');
 		});
-	}
+	};
 	addFrontCircle = () => {
 		frontCircles.push({
 			x: this.x / canvas.width,
 			y: this.y / canvas.height,
 			radius: canvas.width * App.CIRCLE_RADIUS_FACTOR,
 		});
-	}
+	};
 	addBackCircle = () => {
 		backCircles.push({
 			x: this.x / canvas.width,
 			y: this.y / canvas.height,
 			radius: canvas.width * App.CIRCLE_RADIUS_FACTOR,
 		});
-	}
+	};
 	drawCircle = (c) => {
 		let ctx = this.ctx;
 		ctx.fillStyle = 'black';
@@ -298,7 +298,7 @@ class App extends React.Component {
 		ctx.arc(c.x * canvas.width, c.y * canvas.height, c.radius, 0, 2 * Math.PI, false);
 		ctx.fill();
 		ctx.stroke();
-	}
+	};
 }
 
 ReactDOM.render(<App />, document.getElementById('root'));
