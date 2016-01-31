@@ -37,19 +37,20 @@ serialport.list(function(error, ports) {
 
 				mcuPort.on('data', function(data) {
 					processData(data);
-					/*
-					let nDistanceSensorsHalved = (nDistanceSensors * 0.5).toFixed(0);
-					if (index >= nDistanceSensorsHalved) {
-						oscClient.send('/front', index - nDistanceSensorsHalved, distanceInMeters);
-					} else {
-						oscClient.send('/back', index, distanceInMeters);
-					}
-					*/
 				});
 			});
 		}
 	});
 });
+
+function normalizeDistance(distance) {
+	if (distance < 0.2) {
+		distance = 0.2;
+	} else if (distance > 1.5) {
+		distance = 1.5;
+	}
+	return (distance - 0.2) / 1.3;
+}
 
 function processData(data) {
 	const EOL = '\r\n';
@@ -66,6 +67,14 @@ function processData(data) {
 		if (index == 0) {
 			console.log('index:', index, 'distance:', distance);
 		}
+
+		// Send data to SuperCollider through OSC
+		if (index >= 15) {
+			oscClient.send('/front', index, normalizeDistance(distance));
+		} else {
+			oscClient.send('/back', index, normalizeDistance(distance));
+		}
+
 		startIndex = eolIndex + 2;
 		eolIndex = dataBuffer.indexOf(EOL, startIndex);
 	}

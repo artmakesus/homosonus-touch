@@ -55,7 +55,6 @@ for (0, 14, {
 		Out.ar(out, PlayBuf.ar(1, buf, rate, loop: 1))
 	}).add;
 });
-
 SynthDef("ambient", {
 	arg out = 0, buf, rate = 1;
 	Out.ar(out, PlayBuf.ar(1, buf, rate, loop: 1))
@@ -64,52 +63,21 @@ SynthDef("ambient", {
 
 // Create synths
 (
-~backSounds = [
-	Synth.new(\back0, [\buf, ~buffers[0].bufnum]),
-	Synth.new(\back1, [\buf, ~buffers[1].bufnum]),
-	Synth.new(\back2, [\buf, ~buffers[2].bufnum]),
-	Synth.new(\back3, [\buf, ~buffers[3].bufnum]),
-	Synth.new(\back4, [\buf, ~buffers[4].bufnum]),
-	Synth.new(\back5, [\buf, ~buffers[5].bufnum]),
-	Synth.new(\back6, [\buf, ~buffers[6].bufnum]),
-	Synth.new(\back7, [\buf, ~buffers[7].bufnum]),
-	Synth.new(\back8, [\buf, ~buffers[8].bufnum]),
-	Synth.new(\back9, [\buf, ~buffers[9].bufnum]),
-	Synth.new(\back10, [\buf, ~buffers[10].bufnum]),
-	Synth.new(\back11, [\buf, ~buffers[11].bufnum]),
-	Synth.new(\back12, [\buf, ~buffers[12].bufnum]),
-	Synth.new(\back13, [\buf, ~buffers[13].bufnum]),
-	Synth.new(\back14, [\buf, ~buffers[14].bufnum]),
-];
-~frontSounds = [
-	Synth.new(\front0, [\buf, ~buffers[15].bufnum]),
-	Synth.new(\front1, [\buf, ~buffers[16].bufnum]),
-	Synth.new(\front2, [\buf, ~buffers[17].bufnum]),
-	Synth.new(\front3, [\buf, ~buffers[18].bufnum]),
-	Synth.new(\front4, [\buf, ~buffers[19].bufnum]),
-	Synth.new(\front5, [\buf, ~buffers[20].bufnum]),
-	Synth.new(\front6, [\buf, ~buffers[21].bufnum]),
-	Synth.new(\front7, [\buf, ~buffers[22].bufnum]),
-	Synth.new(\front8, [\buf, ~buffers[23].bufnum]),
-	Synth.new(\front9, [\buf, ~buffers[24].bufnum]),
-	Synth.new(\front10, [\buf, ~buffers[25].bufnum]),
-	Synth.new(\front11, [\buf, ~buffers[26].bufnum]),
-	Synth.new(\front12, [\buf, ~buffers[27].bufnum]),
-	Synth.new(\front13, [\buf, ~buffers[28].bufnum]),
-	Synth.new(\front14, [\buf, ~buffers[29].bufnum]),
-];
+~backSounds = Array.fill(15, {
+	arg i;
+	Synth.new(\back++i, [\buf, ~buffers[i].bufnum])
+});
+~frontSounds = Array.fill(15, {
+	arg i;
+	Synth.new(\front++i, [\buf, ~buffers[15 + i].bufnum])
+});
 ~ambientSound = Synth.new(\ambient, [\buf, ~buffers[30].bufnum]);
 )
 
 // Handle OSC messages
+// msg[1] => sensor index
+// msg[2] => normalized distance (0.0 to 1.0)
 (
-OSCFunc({
-	arg msg;
-
-	~frontSounds[msg[1]].set(\rate, msg[2]);
-
-	msg.postln;
-}, '/front', nil, 57120);
 OSCFunc({
 	arg msg;
 
@@ -117,6 +85,13 @@ OSCFunc({
 
 	msg.postln;
 }, '/back', nil, 57120);
+OSCFunc({
+	arg msg;
+
+	~frontSounds[msg[1]].set(\rate, msg[2]);
+
+	msg.postln;
+}, '/front', nil, 57120);
 )
 
 // Free sounds
