@@ -1,17 +1,12 @@
 #include "IRDistanceSensor.hpp"
-#include "util.hpp"
 
 #include <Arduino.h>
 
 // Min output voltage => longest distance
-static const float MIN_OUTPUT_VOLTAGE = 0.48f / 5 * 1023;
+static const float MIN_OUTPUT_VOLTAGE = 0.48f;
 
 // Max output voltage => shortest distance
-static const float MAX_OUTPUT_VOLTAGE = 2.5f / 5 * 1023;
-
-// Automatically-incremented output pin when using default constructor.
-// Can be changed as necessary.
-int IRDistanceSensor::nextOutputPin = 2;
+static const float MAX_OUTPUT_VOLTAGE = 2.83f;
 
 IRDistanceSensor::IRDistanceSensor() :
 	mOutputPin(nextOutputPin++)
@@ -28,6 +23,7 @@ void IRDistanceSensor::init() {
 }
 
 void IRDistanceSensor::update() {
-	const int value = analogRead(mOutputPin);
-	distanceInMeters = 1.5 - mapf(value, MIN_OUTPUT_VOLTAGE, MAX_OUTPUT_VOLTAGE, 0.2, 1.5);
+	const float value = analogRead(mOutputPin);
+	distanceInMeters = (1 - value / 666.0f) * 1.5f;
+ 	delay(5);
 }

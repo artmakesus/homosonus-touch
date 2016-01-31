@@ -15,6 +15,7 @@ const serialport = require('serialport');
 // Serial Port
 const mcuManufacturer = 'Arduino';
 let mcuPort;
+let dataBuffer = new Buffer(0);
 
 // OSC
 let oscClient = new osc.Client('127.0.0.1', 57120);
@@ -27,31 +28,56 @@ serialport.list(function(error, ports) {
 			});
 
 			mcuPort.open(function(error) {
+				if (error) {
+					console.log(error);
+					return;
+				}
+
+				console.log('Connected to Arduino');
+
 				mcuPort.on('data', function(data) {
-					let startIndex = 0;
-					let eolIndex = data.indexOf('\r\n', startIndex);
-					while (eolIndex >= 0) {
-						if (eolIndex - startIndex < 8) {
-							continue;
-						}
-
-						let index = data.readInt16LE(startIndex += 2);
-						let distanceInMeters = data.readFloatLE(startIndex += 4);
-						startIndex += 2;
-						eolIndex = data.indexOf('\r\n', startIndex);
-
-						let nDistanceSensorsHalved = (nDistanceSensors * 0.5).toFixed(0);
-						if (index >= nDistanceSensorsHalved) {
-							oscClient.send('/front', index - nDistanceSensorsHalved, distanceInMeters);
-						} else {
-							oscClient.send('/back', index, distanceInMeters);
-						}
+					processData(data);
+					/*
+					let nDistanceSensorsHalved = (nDistanceSensors * 0.5).toFixed(0);
+					if (index >= nDistanceSensorsHalved) {
+						oscClient.send('/front', index - nDistanceSensorsHalved, distanceInMeters);
+					} else {
+						oscClient.send('/back', index, distanceInMeters);
 					}
+					*/
 				});
 			});
 		}
 	});
 });
+
+function processData(data) {
+	const EOL = '\r\n';
+
+	dataBuffer = Buffer.concat([dataBuffer, data]);
+
+	let startIndex = 0;
+	let eolIndex = dataBuffer.indexOf(EOL, startIndex);
+
+	// If EOL is at index >= 6, then the previous 6 bytes must be the data
+	while (eolIndex >= startIndex + 6) {
+		let index = dataBuffer.readInt16LE(eolIndex - 6);
+		let distance = dataBuffer.readFloatLE(eolIndex - 4);
+		if (index == 0) {
+			console.log('index:', index, 'distance:', distance);
+		}
+		startIndex = eolIndex + 2;
+		eolIndex = dataBuffer.indexOf(EOL, startIndex);
+	}
+
+	// Keep incomplete data for the next round.
+	let nLeftoverData = dataBuffer.length - startIndex;
+	if (nLeftoverData >= 0) {
+		let nextDataBuffer = new Buffer(nLeftoverData);
+		dataBuffer.copy(nextDataBuffer, startIndex, 0, nLeftoverData);
+		dataBuffer = nextDataBuffer;
+	}
+}
 
 if (bSimulate) {
 	app.use(express.static(__dirname + '/public'));
