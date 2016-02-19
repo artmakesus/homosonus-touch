@@ -4,6 +4,7 @@
   "description": "An interactive sound installation based on human touch interaction",
   "main": "main.js",
   "scripts": {
+  	"start": "node main.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

@@ -4,8 +4,14 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import $ from 'jquery'
 
+// Configuration
+let bUseOSC = false;
+let bDrawVolumes = true; // If false, draw sensor distances
+
 let frontCircles = [],
     backCircles = [];
+
+let now = 0, then = 0, delta = 0;
 
 function intersect(x1, circles, radius) {
 	if (!circles || circles.length == 0) {
@@ -54,8 +60,57 @@ class App extends React.Component {
 	static NUM_SENSORS = 10;
 	static CIRCLE_RADIUS_FACTOR = 0.05;
 	render() {
-		return <canvas id='canvas' ref='canvas'></canvas>
+		return (
+			<div id='app'>
+				<canvas id='canvas' ref='canvas'></canvas>
+				{
+					this.state.sounds.map(function(sound) {
+						return <audio key={sound.ref}
+						              id='sound.ref'
+									  ref={sound.ref}
+									  src={sound.src}
+									  autoPlay
+									  loop />
+					})
+				}
+			</div>
+		)
 	}
+	state = {
+		sounds: [
+			{ ref: 'ambient', src: 'sounds/ambient.wav' },
+			{ ref: 'back0',   src: 'sounds/user1/c0.wav' },
+			{ ref: 'back1',   src: 'sounds/user1/e0.wav' },
+			{ ref: 'back2',   src: 'sounds/user1/ds0.wav' },
+			{ ref: 'back3',   src: 'sounds/user1/b0.wav' },
+			{ ref: 'back4',   src: 'sounds/user1/g0.wav' },
+			{ ref: 'back5',   src: 'sounds/user1/c1.wav' },
+			{ ref: 'back6',   src: 'sounds/user1/e1.wav' },
+			{ ref: 'back7',   src: 'sounds/user1/ds1.wav' },
+			{ ref: 'back8',   src: 'sounds/user1/b1.wav' },
+			{ ref: 'back9',   src: 'sounds/user1/g1.wav' },
+			{ ref: 'back10',  src: 'sounds/user1/c2.wav' },
+			{ ref: 'back11',  src: 'sounds/user1/e2.wav' },
+			{ ref: 'back12',  src: 'sounds/user1/ds2.wav' },
+			{ ref: 'back13',  src: 'sounds/user1/b2.wav' },
+			{ ref: 'back14',  src: 'sounds/user1/g2.wav' },
+			{ ref: 'front0',  src: 'sounds/user2/c00.wav' },
+			{ ref: 'front1',  src: 'sounds/user2/e00.wav' },
+			{ ref: 'front2',  src: 'sounds/user2/ds00.wav' },
+			{ ref: 'front3',  src: 'sounds/user2/b00.wav' },
+			{ ref: 'front4',  src: 'sounds/user2/g00.wav' },
+			{ ref: 'front5',  src: 'sounds/user2/c11.wav' },
+			{ ref: 'front6',  src: 'sounds/user2/e11.wav' },
+			{ ref: 'front7',  src: 'sounds/user2/ds11.wav' },
+			{ ref: 'front8',  src: 'sounds/user2/b11.wav' },
+			{ ref: 'front9',  src: 'sounds/user2/g11.wav' },
+			{ ref: 'front10', src: 'sounds/user2/c22.wav' },
+			{ ref: 'front11', src: 'sounds/user2/e22.wav' },
+			{ ref: 'front12', src: 'sounds/user2/ds22.wav' },
+			{ ref: 'front13', src: 'sounds/user2/b22.wav' },
+			{ ref: 'front14', src: 'sounds/user2/g22.wav' },
+		],
+	};
 	componentDidMount() {
 		// Handle window resize
 		this.resize();
@@ -71,8 +126,38 @@ class App extends React.Component {
 		// Handle animation
 		this.ctx = canvas.getContext('2d');
 		requestAnimationFrame(this.draw);
+
+		// Initialize Sounds
+		this.initializeSounds();
+
+		// Check whether app should send OSC messages (for SuperCollider)
+		$.ajax({
+			url: '/supercollider',
+			method: 'GET',
+		}).done((response) => {
+			if (typeof(response) == 'boolean') {
+				bUseOSC = response;
+			}
+		}).fail((response) => {
+			console.log(response);
+		});
 	}
+	initializeSounds = () => {
+		this.refs['ambient'].volume = 1;
+		for (let i in this.state.sounds) {
+			let sound = this.state.sounds[i];
+			this.refs[sound.ref].volume = 0;
+		}
+	};
 	draw = () => {
+		if (then == 0) {
+			then = Date.now();
+		} else {
+			then = now;
+		}
+		now = Date.now();
+		delta = (now - then) * 0.001;
+
 		let sensorDistance = canvas.width / App.NUM_SENSORS;
 		let frontHeights = [],
 			backHeights = [];
@@ -111,6 +196,7 @@ class App extends React.Component {
 
 		let canvasWidth = canvas.width;
 		let canvasHeight = canvas.height;
+
 		for (let i = 0; i < App.NUM_SENSORS; i++) {
 			let x = i * sensorDistance + sensorDistance * 0.5;
 			ctx.beginPath();
@@ -120,10 +206,11 @@ class App extends React.Component {
 			ctx.stroke();
 			ctx.closePath();
 
-			let normalizedHeight = Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
+			let value = bDrawVolumes ? this.refs['back' + i].volume :
+			                           Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
 			ctx.font = '16px sans-serif';
 			ctx.fillStyle = 'red';
-			ctx.fillText(normalizedHeight.toFixed(2), x + 8, 24);
+			ctx.fillText(value.toFixed(2), x + 8, 24);
 		}
 
 		for (let i in backCircles) {
@@ -139,17 +226,22 @@ class App extends React.Component {
 			ctx.stroke();
 			ctx.closePath();
 
-			let normalizedHeight = Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
+			let value = bDrawVolumes ? this.refs['front' + i].volume :
+			                           Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
 			ctx.font = '16px sans-serif';
 			ctx.fillStyle = 'green';
-			ctx.fillText(normalizedHeight.toFixed(2), x + 8, 48);
+			ctx.fillText(value.toFixed(2), x + 8, 48);
 		}
 
 		for (let i in frontCircles) {
 			this.drawCircle(frontCircles[i]);
 		}
 
-		this.updateOSC(frontHeights, backHeights);
+		if (bUseOSC) {
+			this.updateOSC(frontHeights, backHeights);
+		} else {
+			this.updateSounds(frontHeights, backHeights);
+		}
 
 		requestAnimationFrame(this.draw);
 	};
@@ -190,8 +282,6 @@ class App extends React.Component {
 			if (this.draggingFrontCircle) {
 				continue;
 			}
-
-			console.log('test:', i);
 
 			let result = contains(event.clientX, event.clientY, backCircles[i]);
 			if (!result.isContaining) {
@@ -252,7 +342,7 @@ class App extends React.Component {
 			this.addBackCircle();
 			break;
 		default:
-			console.log(key);
+			break;
 		}
 	};
 	updateOSC = (frontHeights, backHeights) => {
@@ -276,6 +366,27 @@ class App extends React.Component {
 		}).fail(function(resp) {
 			console.log('Failed to send height data');
 		});
+	};
+	updateSounds = (frontHeights, backHeights) => {
+		// Normalize data
+		for (let i = 0; i < frontHeights.length; i++) {
+			let sound = this.refs['front' + i];
+			frontHeights[i] = Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
+			if (frontHeights[i] > 0.05 && frontHeights[i] < 0.95) {
+				sound.volume = (sound.volume + delta) > 1 ? 1 : sound.volume + delta;
+			} else {
+				sound.volume = (sound.volume - delta) < 0 ? 0 : sound.volume - delta;
+			}
+		}
+		for (let i = 0; i < backHeights.length; i++) {
+			let sound = this.refs['back' + i];
+			backHeights[i] = Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
+			if (backHeights[i] > 0.05 && backHeights[i] < 0.95) {
+				sound.volume = (sound.volume + delta) > 1 ? 1 : sound.volume + delta;
+			} else {
+				sound.volume = (sound.volume - delta) < 0 ? 0 : sound.volume - delta;
+			}
+		}
 	};
 	addFrontCircle = () => {
 		frontCircles.push({

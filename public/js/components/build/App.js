@@ -22,8 +22,16 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+// Configuration
+var bUseOSC = false;
+var bDrawVolumes = true; // If false, draw sensor distances
+
 var frontCircles = [],
     backCircles = [];
+
+var now = 0,
+    then = 0,
+    delta = 0;
 
 function intersect(x1, circles, radius) {
 	if (!circles || circles.length == 0) {
@@ -82,7 +90,23 @@ var App = function (_React$Component) {
 			args[_key] = arguments[_key];
 		}
 
-		return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(App)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this), _this.draw = function () {
+		return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(App)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this), _this.state = {
+			sounds: [{ ref: 'ambient', src: 'sounds/ambient.wav' }, { ref: 'back0', src: 'sounds/user1/c0.wav' }, { ref: 'back1', src: 'sounds/user1/e0.wav' }, { ref: 'back2', src: 'sounds/user1/ds0.wav' }, { ref: 'back3', src: 'sounds/user1/b0.wav' }, { ref: 'back4', src: 'sounds/user1/g0.wav' }, { ref: 'back5', src: 'sounds/user1/c1.wav' }, { ref: 'back6', src: 'sounds/user1/e1.wav' }, { ref: 'back7', src: 'sounds/user1/ds1.wav' }, { ref: 'back8', src: 'sounds/user1/b1.wav' }, { ref: 'back9', src: 'sounds/user1/g1.wav' }, { ref: 'back10', src: 'sounds/user1/c2.wav' }, { ref: 'back11', src: 'sounds/user1/e2.wav' }, { ref: 'back12', src: 'sounds/user1/ds2.wav' }, { ref: 'back13', src: 'sounds/user1/b2.wav' }, { ref: 'back14', src: 'sounds/user1/g2.wav' }, { ref: 'front0', src: 'sounds/user2/c00.wav' }, { ref: 'front1', src: 'sounds/user2/e00.wav' }, { ref: 'front2', src: 'sounds/user2/ds00.wav' }, { ref: 'front3', src: 'sounds/user2/b00.wav' }, { ref: 'front4', src: 'sounds/user2/g00.wav' }, { ref: 'front5', src: 'sounds/user2/c11.wav' }, { ref: 'front6', src: 'sounds/user2/e11.wav' }, { ref: 'front7', src: 'sounds/user2/ds11.wav' }, { ref: 'front8', src: 'sounds/user2/b11.wav' }, { ref: 'front9', src: 'sounds/user2/g11.wav' }, { ref: 'front10', src: 'sounds/user2/c22.wav' }, { ref: 'front11', src: 'sounds/user2/e22.wav' }, { ref: 'front12', src: 'sounds/user2/ds22.wav' }, { ref: 'front13', src: 'sounds/user2/b22.wav' }, { ref: 'front14', src: 'sounds/user2/g22.wav' }]
+		}, _this.initializeSounds = function () {
+			_this.refs['ambient'].volume = 1;
+			for (var i in _this.state.sounds) {
+				var sound = _this.state.sounds[i];
+				_this.refs[sound.ref].volume = 0;
+			}
+		}, _this.draw = function () {
+			if (then == 0) {
+				then = Date.now();
+			} else {
+				then = now;
+			}
+			now = Date.now();
+			delta = (now - then) * 0.001;
+
 			var sensorDistance = canvas.width / App.NUM_SENSORS;
 			var frontHeights = [],
 			    backHeights = [];
@@ -121,6 +145,7 @@ var App = function (_React$Component) {
 
 			var canvasWidth = canvas.width;
 			var canvasHeight = canvas.height;
+
 			for (var i = 0; i < App.NUM_SENSORS; i++) {
 				var x = i * sensorDistance + sensorDistance * 0.5;
 				ctx.beginPath();
@@ -130,10 +155,10 @@ var App = function (_React$Component) {
 				ctx.stroke();
 				ctx.closePath();
 
-				var normalizedHeight = Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
+				var value = bDrawVolumes ? _this.refs['back' + i].volume : Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
 				ctx.font = '16px sans-serif';
 				ctx.fillStyle = 'red';
-				ctx.fillText(normalizedHeight.toFixed(2), x + 8, 24);
+				ctx.fillText(value.toFixed(2), x + 8, 24);
 			}
 
 			for (var i in backCircles) {
@@ -149,17 +174,21 @@ var App = function (_React$Component) {
 				ctx.stroke();
 				ctx.closePath();
 
-				var normalizedHeight = Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
+				var value = bDrawVolumes ? _this.refs['front' + i].volume : Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
 				ctx.font = '16px sans-serif';
 				ctx.fillStyle = 'green';
-				ctx.fillText(normalizedHeight.toFixed(2), x + 8, 48);
+				ctx.fillText(value.toFixed(2), x + 8, 48);
 			}
 
 			for (var i in frontCircles) {
 				_this.drawCircle(frontCircles[i]);
 			}
 
-			_this.updateOSC(frontHeights, backHeights);
+			if (bUseOSC) {
+				_this.updateOSC(frontHeights, backHeights);
+			} else {
+				_this.updateSounds(frontHeights, backHeights);
+			}
 
 			requestAnimationFrame(_this.draw);
 		}, _this.resize = function () {
@@ -198,8 +227,6 @@ var App = function (_React$Component) {
 				if (_this.draggingFrontCircle) {
 					continue;
 				}
-
-				console.log('test:', i);
 
 				var result = contains(event.clientX, event.clientY, backCircles[i]);
 				if (!result.isContaining) {
@@ -256,7 +283,7 @@ var App = function (_React$Component) {
 					_this.addBackCircle();
 					break;
 				default:
-					console.log(key);
+					break;
 			}
 		}, _this.updateOSC = function (frontHeights, backHeights) {
 			// Normalize data
@@ -279,6 +306,26 @@ var App = function (_React$Component) {
 			}).fail(function (resp) {
 				console.log('Failed to send height data');
 			});
+		}, _this.updateSounds = function (frontHeights, backHeights) {
+			// Normalize data
+			for (var i = 0; i < frontHeights.length; i++) {
+				var sound = _this.refs['front' + i];
+				frontHeights[i] = Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
+				if (frontHeights[i] > 0.05 && frontHeights[i] < 0.95) {
+					sound.volume = sound.volume + delta > 1 ? 1 : sound.volume + delta;
+				} else {
+					sound.volume = sound.volume - delta < 0 ? 0 : sound.volume - delta;
+				}
+			}
+			for (var i = 0; i < backHeights.length; i++) {
+				var sound = _this.refs['back' + i];
+				backHeights[i] = Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
+				if (backHeights[i] > 0.05 && backHeights[i] < 0.95) {
+					sound.volume = sound.volume + delta > 1 ? 1 : sound.volume + delta;
+				} else {
+					sound.volume = sound.volume - delta < 0 ? 0 : sound.volume - delta;
+				}
+			}
 		}, _this.addFrontCircle = function () {
 			frontCircles.push({
 				x: _this.x / canvas.width,
@@ -304,7 +351,19 @@ var App = function (_React$Component) {
 	_createClass(App, [{
 		key: 'render',
 		value: function render() {
-			return _react2.default.createElement('canvas', { id: 'canvas', ref: 'canvas' });
+			return _react2.default.createElement(
+				'div',
+				{ id: 'app' },
+				_react2.default.createElement('canvas', { id: 'canvas', ref: 'canvas' }),
+				this.state.sounds.map(function (sound) {
+					return _react2.default.createElement('audio', { key: sound.ref,
+						id: 'sound.ref',
+						ref: sound.ref,
+						src: sound.src,
+						autoPlay: true,
+						loop: true });
+				})
+			);
 		}
 	}, {
 		key: 'componentDidMount',
@@ -323,6 +382,21 @@ var App = function (_React$Component) {
 			// Handle animation
 			this.ctx = canvas.getContext('2d');
 			requestAnimationFrame(this.draw);
+
+			// Initialize Sounds
+			this.initializeSounds();
+
+			// Check whether app should send OSC messages (for SuperCollider)
+			_jquery2.default.ajax({
+				url: '/supercollider',
+				method: 'GET'
+			}).done(function (response) {
+				if (typeof response == 'boolean') {
+					bUseOSC = response;
+				}
+			}).fail(function (response) {
+				console.log(response);
+			});
 		}
 	}]);
 
@@ -331,5 +405,6 @@ var App = function (_React$Component) {
 
 App.NUM_SENSORS = 10;
 App.CIRCLE_RADIUS_FACTOR = 0.05;
+
 
 _reactDom2.default.render(_react2.default.createElement(App, null), document.getElementById('root'));

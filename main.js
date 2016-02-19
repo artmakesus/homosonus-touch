@@ -1,7 +1,8 @@
 'use strict'
 
 // Configuration
-const bSimulate = false;
+const bUseOSC = false;
+const bSimulate = true;
 const nDistanceSensors = 30;
 
 // Modules
@@ -91,6 +92,10 @@ function processData(data) {
 if (bSimulate) {
 	app.use(express.static(__dirname + '/public'));
 	app.use(bodyParser.urlencoded({ extended: false }));
+
+	app.get('/supercollider', function(req, res) {
+		res.send(bUseSuperCollider);
+	});
 
 	app.post('/data', function(req, res) {
 		try {
