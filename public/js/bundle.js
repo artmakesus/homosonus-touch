@@ -402,7 +402,7 @@
 					_react2.default.createElement('canvas', { id: 'canvas', ref: 'canvas' }),
 					this.state.sounds.map(function (sound) {
 						return _react2.default.createElement('audio', { key: sound.ref,
-							id: 'sound.ref',
+							id: sound.ref,
 							ref: sound.ref,
 							src: sound.src,
 							autoPlay: true,

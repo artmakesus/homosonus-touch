@@ -67,7 +67,7 @@ class App extends React.Component {
 				{
 					this.state.sounds.map(function(sound) {
 						return <audio key={sound.ref}
-						              id='sound.ref'
+						              id={sound.ref}
 									  ref={sound.ref}
 									  src={sound.src}
 									  autoPlay
