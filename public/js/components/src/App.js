@@ -303,7 +303,6 @@ class App extends React.Component {
 	};
 	mouseup = (event) => {
 		this.isMouseDown = false;
-		this.draggingFrontCircle = false;
 	};
 	mousemove = (event) => {
 		if (this.isMouseDown) {
@@ -332,7 +331,11 @@ class App extends React.Component {
 		switch (key) {
 		case 8:
 			if (this.draggedCircle) {
-				frontCircles.splice(this.draggedCircle.circle, 1);
+				if (this.draggingFrontCircle) {
+					frontCircles.splice(this.draggedCircle.circle, 1);
+				} else {
+					backCircles.splice(this.draggedCircle.circle, 1);
+				}
 			}
 			break;
 		case 49:

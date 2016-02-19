@@ -293,7 +293,6 @@
 				_this.draggedCircle = null;
 			}, _this.mouseup = function (event) {
 				_this.isMouseDown = false;
-				_this.draggingFrontCircle = false;
 			}, _this.mousemove = function (event) {
 				if (_this.isMouseDown) {
 					var isFrontCircle = _this.draggingFrontCircle;
@@ -319,7 +318,11 @@
 				switch (key) {
 					case 8:
 						if (_this.draggedCircle) {
-							frontCircles.splice(_this.draggedCircle.circle, 1);
+							if (_this.draggingFrontCircle) {
+								frontCircles.splice(_this.draggedCircle.circle, 1);
+							} else {
+								backCircles.splice(_this.draggedCircle.circle, 1);
+							}
 						}
 						break;
 					case 49:
