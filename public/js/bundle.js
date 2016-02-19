@@ -71,6 +71,7 @@
 	// Configuration
 	var bUseOSC = false;
 	var bDrawVolumes = true; // If false, draw sensor distances
+	var volumeSpeed = 0.2;
 
 	var frontCircles = [],
 	    backCircles = [];
@@ -270,10 +271,6 @@
 				}
 
 				for (var i in backCircles) {
-					if (_this.draggingFrontCircle) {
-						continue;
-					}
-
 					var result = contains(event.clientX, event.clientY, backCircles[i]);
 					if (!result.isContaining) {
 						continue;
@@ -295,12 +292,11 @@
 				_this.isMouseDown = false;
 			}, _this.mousemove = function (event) {
 				if (_this.isMouseDown) {
-					var isFrontCircle = _this.draggingFrontCircle;
 					var c = _this.draggedCircle;
 					if (c) {
 						var x = (event.clientX + c.dx) / canvas.width;
 						var y = (event.clientY + c.dy) / canvas.height;
-						if (isFrontCircle) {
+						if (_this.draggingFrontCircle) {
 							frontCircles[c.circle].x = x;
 							frontCircles[c.circle].y = y;
 						} else {
@@ -361,18 +357,18 @@
 					var sound = _this.refs['front' + i];
 					frontHeights[i] = Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
 					if (frontHeights[i] > 0.05 && frontHeights[i] < 0.95) {
-						sound.volume = sound.volume + delta > 1 ? 1 : sound.volume + delta;
+						sound.volume = sound.volume + delta * volumeSpeed > 1 ? 1 : sound.volume + delta * volumeSpeed;
 					} else {
-						sound.volume = sound.volume - delta < 0 ? 0 : sound.volume - delta;
+						sound.volume = sound.volume - delta * volumeSpeed < 0 ? 0 : sound.volume - delta * volumeSpeed;
 					}
 				}
 				for (var i = 0; i < backHeights.length; i++) {
 					var sound = _this.refs['back' + i];
 					backHeights[i] = Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
 					if (backHeights[i] > 0.05 && backHeights[i] < 0.95) {
-						sound.volume = sound.volume + delta > 1 ? 1 : sound.volume + delta;
+						sound.volume = sound.volume + delta * volumeSpeed > 1 ? 1 : sound.volume + delta * volumeSpeed;
 					} else {
-						sound.volume = sound.volume - delta < 0 ? 0 : sound.volume - delta;
+						sound.volume = sound.volume - delta * volumeSpeed < 0 ? 0 : sound.volume - delta * volumeSpeed;
 					}
 				}
 			}, _this.addFrontCircle = function () {
@@ -452,7 +448,7 @@
 		return App;
 	}(_react2.default.Component);
 
-	App.NUM_SENSORS = 10;
+	App.NUM_SENSORS = 15;
 	App.CIRCLE_RADIUS_FACTOR = 0.05;
 
 

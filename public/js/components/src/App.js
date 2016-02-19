@@ -7,6 +7,7 @@ import $ from 'jquery'
 // Configuration
 let bUseOSC = false;
 let bDrawVolumes = true; // If false, draw sensor distances
+let volumeSpeed = 0.2;
 
 let frontCircles = [],
     backCircles = [];
@@ -57,7 +58,7 @@ function contains(mouseX, mouseY, circle) {
 }
 
 class App extends React.Component {
-	static NUM_SENSORS = 10;
+	static NUM_SENSORS = 15;
 	static CIRCLE_RADIUS_FACTOR = 0.05;
 	render() {
 		return (
@@ -279,10 +280,6 @@ class App extends React.Component {
 		}
 
 		for (let i in backCircles) {
-			if (this.draggingFrontCircle) {
-				continue;
-			}
-
 			let result = contains(event.clientX, event.clientY, backCircles[i]);
 			if (!result.isContaining) {
 				continue;
@@ -306,12 +303,11 @@ class App extends React.Component {
 	};
 	mousemove = (event) => {
 		if (this.isMouseDown) {
-			let isFrontCircle = this.draggingFrontCircle;
 			let c = this.draggedCircle;
 			if (c) {
 				let x = (event.clientX + c.dx) / canvas.width;
 				let y = (event.clientY + c.dy) / canvas.height;
-				if (isFrontCircle) {
+				if (this.draggingFrontCircle) {
 					frontCircles[c.circle].x = x;
 					frontCircles[c.circle].y = y;
 				} else {
@@ -376,18 +372,18 @@ class App extends React.Component {
 			let sound = this.refs['front' + i];
 			frontHeights[i] = Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
 			if (frontHeights[i] > 0.05 && frontHeights[i] < 0.95) {
-				sound.volume = (sound.volume + delta) > 1 ? 1 : sound.volume + delta;
+				sound.volume = (sound.volume + delta * volumeSpeed) > 1 ? 1 : sound.volume + delta * volumeSpeed;
 			} else {
-				sound.volume = (sound.volume - delta) < 0 ? 0 : sound.volume - delta;
+				sound.volume = (sound.volume - delta * volumeSpeed) < 0 ? 0 : sound.volume - delta * volumeSpeed;
 			}
 		}
 		for (let i = 0; i < backHeights.length; i++) {
 			let sound = this.refs['back' + i];
 			backHeights[i] = Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
 			if (backHeights[i] > 0.05 && backHeights[i] < 0.95) {
-				sound.volume = (sound.volume + delta) > 1 ? 1 : sound.volume + delta;
+				sound.volume = (sound.volume + delta * volumeSpeed) > 1 ? 1 : sound.volume + delta * volumeSpeed;
 			} else {
-				sound.volume = (sound.volume - delta) < 0 ? 0 : sound.volume - delta;
+				sound.volume = (sound.volume - delta * volumeSpeed) < 0 ? 0 : sound.volume - delta * volumeSpeed;
 			}
 		}
 	};
