@@ -140,7 +140,6 @@
 			return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(App)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this), _this.state = {
 				sounds: [{ ref: 'ambient', src: 'sounds/ambient.wav' }, { ref: 'back0', src: 'sounds/user1/c0.wav' }, { ref: 'back1', src: 'sounds/user1/e0.wav' }, { ref: 'back2', src: 'sounds/user1/ds0.wav' }, { ref: 'back3', src: 'sounds/user1/b0.wav' }, { ref: 'back4', src: 'sounds/user1/g0.wav' }, { ref: 'back5', src: 'sounds/user1/c1.wav' }, { ref: 'back6', src: 'sounds/user1/e1.wav' }, { ref: 'back7', src: 'sounds/user1/ds1.wav' }, { ref: 'back8', src: 'sounds/user1/b1.wav' }, { ref: 'back9', src: 'sounds/user1/g1.wav' }, { ref: 'back10', src: 'sounds/user1/c2.wav' }, { ref: 'back11', src: 'sounds/user1/e2.wav' }, { ref: 'back12', src: 'sounds/user1/ds2.wav' }, { ref: 'back13', src: 'sounds/user1/b2.wav' }, { ref: 'back14', src: 'sounds/user1/g2.wav' }, { ref: 'front0', src: 'sounds/user2/c00.wav' }, { ref: 'front1', src: 'sounds/user2/e00.wav' }, { ref: 'front2', src: 'sounds/user2/ds00.wav' }, { ref: 'front3', src: 'sounds/user2/b00.wav' }, { ref: 'front4', src: 'sounds/user2/g00.wav' }, { ref: 'front5', src: 'sounds/user2/c11.wav' }, { ref: 'front6', src: 'sounds/user2/e11.wav' }, { ref: 'front7', src: 'sounds/user2/ds11.wav' }, { ref: 'front8', src: 'sounds/user2/b11.wav' }, { ref: 'front9', src: 'sounds/user2/g11.wav' }, { ref: 'front10', src: 'sounds/user2/c22.wav' }, { ref: 'front11', src: 'sounds/user2/e22.wav' }, { ref: 'front12', src: 'sounds/user2/ds22.wav' }, { ref: 'front13', src: 'sounds/user2/b22.wav' }, { ref: 'front14', src: 'sounds/user2/g22.wav' }]
 			}, _this.initializeSounds = function () {
-				_this.refs['ambient'].volume = 1;
 				for (var i in _this.state.sounds) {
 					var sound = _this.state.sounds[i];
 					_this.refs[sound.ref].volume = 0;
@@ -371,6 +370,8 @@
 						sound.volume = sound.volume - delta * volumeSpeed < 0 ? 0 : sound.volume - delta * volumeSpeed;
 					}
 				}
+
+				_this.refs.ambient.volume = 1;
 			}, _this.addFrontCircle = function () {
 				frontCircles.push({
 					x: _this.x / canvas.width,

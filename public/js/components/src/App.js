@@ -144,7 +144,6 @@ class App extends React.Component {
 		});
 	}
 	initializeSounds = () => {
-		this.refs['ambient'].volume = 1;
 		for (let i in this.state.sounds) {
 			let sound = this.state.sounds[i];
 			this.refs[sound.ref].volume = 0;
@@ -386,6 +385,8 @@ class App extends React.Component {
 				sound.volume = (sound.volume - delta * volumeSpeed) < 0 ? 0 : sound.volume - delta * volumeSpeed;
 			}
 		}
+
+		this.refs.ambient.volume = 1;
 	};
 	addFrontCircle = () => {
 		frontCircles.push({
