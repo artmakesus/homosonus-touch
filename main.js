@@ -94,7 +94,7 @@ if (bSimulate) {
 	app.use(bodyParser.urlencoded({ extended: false }));
 
 	app.get('/supercollider', function(req, res) {
-		res.send(bUseSuperCollider);
+		res.send(bUseOSC);
 	});
 
 	app.post('/data', function(req, res) {
