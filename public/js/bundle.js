@@ -138,12 +138,32 @@
 			}
 
 			return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(App)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this), _this.state = {
+				soundsLoaded: 0,
 				sounds: [{ ref: 'ambient', src: 'sounds/ambient.wav' }, { ref: 'back0', src: 'sounds/user1/c0.wav' }, { ref: 'back1', src: 'sounds/user1/e0.wav' }, { ref: 'back2', src: 'sounds/user1/ds0.wav' }, { ref: 'back3', src: 'sounds/user1/b0.wav' }, { ref: 'back4', src: 'sounds/user1/g0.wav' }, { ref: 'back5', src: 'sounds/user1/c1.wav' }, { ref: 'back6', src: 'sounds/user1/e1.wav' }, { ref: 'back7', src: 'sounds/user1/ds1.wav' }, { ref: 'back8', src: 'sounds/user1/b1.wav' }, { ref: 'back9', src: 'sounds/user1/g1.wav' }, { ref: 'back10', src: 'sounds/user1/c2.wav' }, { ref: 'back11', src: 'sounds/user1/e2.wav' }, { ref: 'back12', src: 'sounds/user1/ds2.wav' }, { ref: 'back13', src: 'sounds/user1/b2.wav' }, { ref: 'back14', src: 'sounds/user1/g2.wav' }, { ref: 'front0', src: 'sounds/user2/c00.wav' }, { ref: 'front1', src: 'sounds/user2/e00.wav' }, { ref: 'front2', src: 'sounds/user2/ds00.wav' }, { ref: 'front3', src: 'sounds/user2/b00.wav' }, { ref: 'front4', src: 'sounds/user2/g00.wav' }, { ref: 'front5', src: 'sounds/user2/c11.wav' }, { ref: 'front6', src: 'sounds/user2/e11.wav' }, { ref: 'front7', src: 'sounds/user2/ds11.wav' }, { ref: 'front8', src: 'sounds/user2/b11.wav' }, { ref: 'front9', src: 'sounds/user2/g11.wav' }, { ref: 'front10', src: 'sounds/user2/c22.wav' }, { ref: 'front11', src: 'sounds/user2/e22.wav' }, { ref: 'front12', src: 'sounds/user2/ds22.wav' }, { ref: 'front13', src: 'sounds/user2/b22.wav' }, { ref: 'front14', src: 'sounds/user2/g22.wav' }]
 			}, _this.initializeSounds = function () {
 				for (var i in _this.state.sounds) {
 					var sound = _this.state.sounds[i];
 					_this.refs[sound.ref].volume = 0;
+					_this.refs[sound.ref].addEventListener('loadeddata', function () {
+						var soundsLoaded = _this.state.soundsLoaded + 1;
+						_this.setState({ soundsLoaded: soundsLoaded });
+					});
 				}
+			}, _this.initializeCanvas = function () {
+				// Handle window resize
+				_this.resize();
+				window.addEventListener('resize', _this.resize);
+
+				// Handle mouse
+				window.addEventListener('mousedown', _this.mousedown);
+				window.addEventListener('mouseup', _this.mouseup);
+				window.addEventListener('mousemove', _this.mousemove);
+				window.addEventListener('dblclick', _this.dblclick);
+				window.addEventListener('keyup', _this.keyup);
+
+				// Handle animation
+				_this.ctx = canvas.getContext('2d');
+				requestAnimationFrame(_this.draw);
 			}, _this.draw = function () {
 				if (then == 0) {
 					then = Date.now();
@@ -400,7 +420,6 @@
 				return _react2.default.createElement(
 					'div',
 					{ id: 'app' },
-					_react2.default.createElement('canvas', { id: 'canvas', ref: 'canvas' }),
 					this.state.sounds.map(function (sound) {
 						return _react2.default.createElement('audio', { key: sound.ref,
 							id: sound.ref,
@@ -408,27 +427,19 @@
 							src: sound.src,
 							autoPlay: true,
 							loop: true });
-					})
+					}),
+					this.state.soundsLoaded == this.state.sounds.length ? _react2.default.createElement('canvas', { id: 'canvas', ref: 'canvas' }) : _react2.default.createElement(
+						'p',
+						null,
+						'Loaded ',
+						this.state.soundsLoaded,
+						' sounds..'
+					)
 				);
 			}
 		}, {
 			key: 'componentDidMount',
 			value: function componentDidMount() {
-				// Handle window resize
-				this.resize();
-				window.addEventListener('resize', this.resize);
-
-				// Handle mouse
-				window.addEventListener('mousedown', this.mousedown);
-				window.addEventListener('mouseup', this.mouseup);
-				window.addEventListener('mousemove', this.mousemove);
-				window.addEventListener('dblclick', this.dblclick);
-				window.addEventListener('keyup', this.keyup);
-
-				// Handle animation
-				this.ctx = canvas.getContext('2d');
-				requestAnimationFrame(this.draw);
-
 				// Initialize Sounds
 				this.initializeSounds();
 
@@ -443,6 +454,22 @@
 				}).fail(function (response) {
 					console.log(response);
 				});
+			}
+		}, {
+			key: 'componentDidUpdate',
+			value: function componentDidUpdate() {
+				if (this.state.soundsLoaded == this.state.sounds.length) {
+					this.resetSounds();
+					this.initializeCanvas();
+				}
+			}
+		}, {
+			key: 'resetSounds',
+			value: function resetSounds() {
+				for (var i in this.state.sounds) {
+					var sound = this.state.sounds[i];
+					this.refs[sound.ref].currentTime = 0;
+				}
 			}
 		}]);
 

@@ -63,21 +63,26 @@ class App extends React.Component {
 	render() {
 		return (
 			<div id='app'>
-				<canvas id='canvas' ref='canvas'></canvas>
 				{
 					this.state.sounds.map(function(sound) {
 						return <audio key={sound.ref}
-						              id={sound.ref}
+									  id={sound.ref}
 									  ref={sound.ref}
 									  src={sound.src}
 									  autoPlay
 									  loop />
 					})
 				}
+				{
+					this.state.soundsLoaded == this.state.sounds.length ?
+					<canvas id='canvas' ref='canvas'></canvas> :
+					<p>Loaded {this.state.soundsLoaded} sounds..</p>
+				}
 			</div>
 		)
 	}
 	state = {
+		soundsLoaded: 0,
 		sounds: [
 			{ ref: 'ambient', src: 'sounds/ambient.wav' },
 			{ ref: 'back0',   src: 'sounds/user1/c0.wav' },
@@ -113,21 +118,6 @@ class App extends React.Component {
 		],
 	};
 	componentDidMount() {
-		// Handle window resize
-		this.resize();
-		window.addEventListener('resize', this.resize);
-
-		// Handle mouse
-		window.addEventListener('mousedown', this.mousedown);
-		window.addEventListener('mouseup', this.mouseup);
-		window.addEventListener('mousemove', this.mousemove);
-		window.addEventListener('dblclick', this.dblclick);
-		window.addEventListener('keyup', this.keyup);
-
-		// Handle animation
-		this.ctx = canvas.getContext('2d');
-		requestAnimationFrame(this.draw);
-
 		// Initialize Sounds
 		this.initializeSounds();
 
@@ -143,11 +133,43 @@ class App extends React.Component {
 			console.log(response);
 		});
 	}
+	componentDidUpdate() {
+		if (this.state.soundsLoaded == this.state.sounds.length) {
+			this.resetSounds();
+			this.initializeCanvas();
+		}
+	}
 	initializeSounds = () => {
 		for (let i in this.state.sounds) {
 			let sound = this.state.sounds[i];
 			this.refs[sound.ref].volume = 0;
+			this.refs[sound.ref].addEventListener('loadeddata', () => {
+				let soundsLoaded = this.state.soundsLoaded + 1;
+				this.setState({ soundsLoaded: soundsLoaded });
+			});
 		}
+	};
+	resetSounds() {
+		for (let i in this.state.sounds) {
+			let sound = this.state.sounds[i];
+			this.refs[sound.ref].currentTime = 0;
+		}
+	}
+	initializeCanvas = () => {
+		// Handle window resize
+		this.resize();
+		window.addEventListener('resize', this.resize);
+
+		// Handle mouse
+		window.addEventListener('mousedown', this.mousedown);
+		window.addEventListener('mouseup', this.mouseup);
+		window.addEventListener('mousemove', this.mousemove);
+		window.addEventListener('dblclick', this.dblclick);
+		window.addEventListener('keyup', this.keyup);
+
+		// Handle animation
+		this.ctx = canvas.getContext('2d');
+		requestAnimationFrame(this.draw);
 	};
 	draw = () => {
 		if (then == 0) {
