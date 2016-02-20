@@ -388,11 +388,24 @@ class App extends React.Component {
 		});
 	};
 	updateSounds = (frontHeights, backHeights) => {
-		// Normalize data
+		let isTouching = false;
+		let touchingIndexes = [];
+
+		// Check for touch
+		for (let i = 0; i < frontHeights.length; i++) {
+			frontHeights[i] = Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
+			backHeights[i] = Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
+			if (frontHeights[i] > 0.05 && frontHeights[i] < 0.95 && backHeights[i] > 0.05 && backHeights[i] < 0.95) {
+				isTouching = true;
+				touchingIndexes.push(i);
+			}
+		}
+
+		// Adjust sound volumes
 		for (let i = 0; i < frontHeights.length; i++) {
 			let sound = this.refs['front' + i];
-			frontHeights[i] = Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
-			if (frontHeights[i] > 0.05 && frontHeights[i] < 0.95) {
+			if ((isTouching == false || (isTouching && touchingIndexes.indexOf(i) >= 0)) &&
+			    frontHeights[i] > 0.05 && frontHeights[i] < 0.95) {
 				sound.volume = (sound.volume + delta * volumeSpeed) > 1 ? 1 : sound.volume + delta * volumeSpeed;
 			} else {
 				sound.volume = (sound.volume - delta * volumeSpeed) < 0 ? 0 : sound.volume - delta * volumeSpeed;
@@ -400,15 +413,19 @@ class App extends React.Component {
 		}
 		for (let i = 0; i < backHeights.length; i++) {
 			let sound = this.refs['back' + i];
-			backHeights[i] = Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
-			if (backHeights[i] > 0.05 && backHeights[i] < 0.95) {
+			if ((isTouching == false || (isTouching && touchingIndexes.indexOf(i) >= 0)) &&
+			    backHeights[i] > 0.05 && backHeights[i] < 0.95) {
 				sound.volume = (sound.volume + delta * volumeSpeed) > 1 ? 1 : sound.volume + delta * volumeSpeed;
 			} else {
 				sound.volume = (sound.volume - delta * volumeSpeed) < 0 ? 0 : sound.volume - delta * volumeSpeed;
 			}
 		}
 
-		this.refs.ambient.volume = 1;
+		if (isTouching) {
+			this.refs.ambient.volume = this.refs.ambient.volume - delta < 0 ? 0 : this.refs.ambient.volume - delta;
+		} else {
+			this.refs.ambient.volume = this.refs.ambient.volume + delta > 1 ? 1 : this.refs.ambient.volume + delta;
+		}
 	};
 	addFrontCircle = () => {
 		frontCircles.push({
