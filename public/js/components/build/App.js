@@ -357,9 +357,9 @@ var App = function (_React$Component) {
 			}
 
 			if (isTouching) {
-				_this.refs.ambient.volume = _this.refs.ambient.volume - delta < 0 ? 0 : _this.refs.ambient.volume - delta;
+				_this.refs.ambient.volume = _this.refs.ambient.volume - delta < 0 ? 0 : _this.refs.ambient.volume - delta * volumeSpeed;
 			} else {
-				_this.refs.ambient.volume = _this.refs.ambient.volume + delta > 1 ? 1 : _this.refs.ambient.volume + delta;
+				_this.refs.ambient.volume = _this.refs.ambient.volume + delta > 1 ? 1 : _this.refs.ambient.volume + delta * volumeSpeed;
 			}
 		}, _this.addFrontCircle = function () {
 			frontCircles.push({

@@ -422,9 +422,9 @@ class App extends React.Component {
 		}
 
 		if (isTouching) {
-			this.refs.ambient.volume = this.refs.ambient.volume - delta < 0 ? 0 : this.refs.ambient.volume - delta;
+			this.refs.ambient.volume = this.refs.ambient.volume - delta < 0 ? 0 : this.refs.ambient.volume - delta * volumeSpeed;
 		} else {
-			this.refs.ambient.volume = this.refs.ambient.volume + delta > 1 ? 1 : this.refs.ambient.volume + delta;
+			this.refs.ambient.volume = this.refs.ambient.volume + delta > 1 ? 1 : this.refs.ambient.volume + delta * volumeSpeed;
 		}
 	};
 	addFrontCircle = () => {
