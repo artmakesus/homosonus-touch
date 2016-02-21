@@ -66,15 +66,19 @@ function processData(data) {
 	// If EOL is at index >= 6, then the previous 6 bytes must be the data
 	while (eolIndex >= startIndex + 6) {
 		let index = dataBuffer.readInt16LE(eolIndex - 6);
-		let distance = dataBuffer.readFloatLE(eolIndex - 4);
+		let distance = normalizeDistance(dataBuffer.readFloatLE(eolIndex - 4));
 
 		// Update front and back heights
 		if (index >= 15 && index < 30) {
-			frontHeights[index - 15] = normalizeDistance(distance);
-			console.log(index, frontHeights[index - 15]);
+			frontHeights[index - 15] = distance;
+			if (index == 15) {
+				console.log(index, frontHeights[index - 15]);
+			}
 		} else if (index >= 0 && index < 15) {
-			backHeights[index] = normalizeDistance(distance);
-			console.log(index, backHeights[index]);
+			backHeights[index] = distance;
+			if (index == 0) {
+				console.log(index, backHeights[index]);
+			}
 		}
 
 		startIndex = eolIndex + 2;
@@ -188,7 +192,7 @@ if (bSimulate) {
 
 		// Check for touch
 		for (let i = 0; i < frontHeights.length; i++) {
-			if (frontHeights[i] > 0.05 && frontHeights[i] < 0.95 && backHeights[i] > 0.05 && backHeights[i] < 0.95) {
+			if (frontHeights[i] > 0.2 && frontHeights[i] < 0.8 && backHeights[i] > 0.2 && backHeights[i] < 0.8) {
 				isTouching = true;
 				touchingIndexes.push(i);
 			}
@@ -196,7 +200,7 @@ if (bSimulate) {
 
 		// Adjust sound volumes
 		for (let i = 0; i < frontHeights.length; i++) {
-			if ((isTouching == false || (isTouching && touchingIndexes.indexOf(i) >= 0)) && frontHeights[i] > 0.05 && frontHeights[i] < 0.95) {
+			if ((isTouching == false || (isTouching && touchingIndexes.indexOf(i) >= 0)) && frontHeights[i] > 0.2 && frontHeights[i] < 0.8) {
 				frontVolumes[i] = frontVolumes[i] + delta * fadeSpeed > 1 ? 1 : frontVolumes[i] + delta * fadeSpeed;
 			} else {
 				frontVolumes[i] = frontVolumes[i] - delta * fadeSpeed < 0 ? 0 : frontVolumes[i] - delta * fadeSpeed;
@@ -204,7 +208,7 @@ if (bSimulate) {
 		}
 		for (let i = 0; i < backHeights.length; i++) {
 			if ((isTouching == false || (isTouching && touchingIndexes.indexOf(i) >= 0)) &&
-			    backHeights[i] > 0.05 && backHeights[i] < 0.95) {
+			    backHeights[i] > 0.2 && backHeights[i] < 0.2) {
 				backVolumes[i] = (backVolumes[i] + delta * fadeSpeed) > 1 ? 1 : backVolumes[i] + delta * fadeSpeed;
 			} else {
 				backVolumes[i] = (backVolumes[i] - delta * fadeSpeed) < 0 ? 0 : backVolumes[i] - delta * fadeSpeed;

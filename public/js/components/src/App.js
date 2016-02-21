@@ -151,9 +151,6 @@ class App extends React.Component {
 			method: 'GET',
 		}).done((volumes) => {
 			for (let i = 0; i < frontHeights.length; i++) {
-				if (volumes.frontVolumes[i] < 0 || volumes.frontVolumes[i] > 1) {
-					console.log(volumes.frontVolumes[i]);
-				}
 				sounds['front' + i].volume = volumes.frontVolumes[i];
 				sounds['back' + i].volume = volumes.backVolumes[i];
 				sounds['ambient'].volume = volumes.ambientVolume;
