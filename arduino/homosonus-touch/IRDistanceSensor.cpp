@@ -23,7 +23,12 @@ void IRDistanceSensor::init() {
 }
 
 void IRDistanceSensor::update() {
+	// Warm-up
+	analogRead(mOutputPin);
+	delay(10);
+
+	// Actual reading
 	const float value = analogRead(mOutputPin);
 	distanceInMeters = (1 - value / 666.0f) * 1.5f;
- 	delay(5);
+ 	delay(10);
 }
