@@ -8,6 +8,7 @@ import $ from 'jquery'
 let bUseOSC = false;
 let bDrawVolumes = true; // If false, draw sensor distances
 let volumeSpeed = 0.2;
+let ambientVolumeSpeed = 1.4;
 
 let frontCircles = [],
     backCircles = [];
@@ -422,9 +423,9 @@ class App extends React.Component {
 		}
 
 		if (isTouching) {
-			this.refs.ambient.volume = this.refs.ambient.volume - delta < 0 ? 0 : this.refs.ambient.volume - delta * volumeSpeed;
+			this.refs.ambient.volume = this.refs.ambient.volume - delta < 0 ? 0 : this.refs.ambient.volume - delta * ambientVolumeSpeed;
 		} else {
-			this.refs.ambient.volume = this.refs.ambient.volume + delta > 1 ? 1 : this.refs.ambient.volume + delta * volumeSpeed;
+			this.refs.ambient.volume = this.refs.ambient.volume + delta > 1 ? 1 : this.refs.ambient.volume + delta * ambientVolumeSpeed;
 		}
 	};
 	addFrontCircle = () => {

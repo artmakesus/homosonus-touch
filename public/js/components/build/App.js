@@ -26,6 +26,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var bUseOSC = false;
 var bDrawVolumes = true; // If false, draw sensor distances
 var volumeSpeed = 0.2;
+var ambientVolumeSpeed = 1.4;
 
 var frontCircles = [],
     backCircles = [];
@@ -357,9 +358,9 @@ var App = function (_React$Component) {
 			}
 
 			if (isTouching) {
-				_this.refs.ambient.volume = _this.refs.ambient.volume - delta < 0 ? 0 : _this.refs.ambient.volume - delta * volumeSpeed;
+				_this.refs.ambient.volume = _this.refs.ambient.volume - delta < 0 ? 0 : _this.refs.ambient.volume - delta * ambientVolumeSpeed;
 			} else {
-				_this.refs.ambient.volume = _this.refs.ambient.volume + delta > 1 ? 1 : _this.refs.ambient.volume + delta * volumeSpeed;
+				_this.refs.ambient.volume = _this.refs.ambient.volume + delta > 1 ? 1 : _this.refs.ambient.volume + delta * ambientVolumeSpeed;
 			}
 		}, _this.addFrontCircle = function () {
 			frontCircles.push({
