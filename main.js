@@ -15,7 +15,7 @@ const serialport = require('serialport');
 
 // Serial Port
 const mcuManufacturer = 'Arduino';
-let mcuPort;
+let mcuPorts = [];
 let dataBuffer = new Buffer(0);
 
 // OSC
@@ -31,18 +31,58 @@ serialport.list(function(error, ports) {
 			mcuPort.open(function(error) {
 				if (error) {
 					console.log(error);
+setInterval(findArduino, 1000);
+
+function findArduino() {
+	serialport.list(function(error, ports) {
+		ports.forEach(function(port) {
+			if (mcuPorts.length > 2) {
+				return;
+			}
+
+			for (let i in mcuPorts) {
+				if (mcuPorts[i].path == port.comName) {
 					return;
 				}
+			}
 
-				console.log('Connected to Arduino');
-
-				mcuPort.on('data', function(data) {
-					processData(data);
+			if (port.manufacturer && port.manufacturer.indexOf(mcuManufacturer) >= 0) {
+				let mcuPort = new serialport.SerialPort(port.comName, {
+					baudrate: 9600,
 				});
-			});
-		}
+
+				mcuPort.open(function(error) {
+					if (error) {
+						console.log(error);
+						return;
+					}
+
+					console.log('Arduino connected');
+
+					mcuPorts.push(mcuPort);
+
+					mcuPort.on('data', function(data) {
+						processData(data);
+					});
+
+					mcuPort.on('close', function(error) {
+						if (error) {
+							console.log(error);
+							return;
+						}
+
+						console.log('Arduino disconnected');
+
+						let mcuPortIndex = mcuPorts.indexOf(mcuPort);
+						if (mcuPortIndex >= 0) {
+							mcuPorts.splice(mcuPortIndex, 1);
+						}
+					});
+				});
+			}
+		});
 	});
-});
+}
 
 function normalizeDistance(distance) {
 	if (distance < 0.2) {
@@ -60,14 +100,16 @@ function processData(data) {
 
 	let startIndex = 0;
 	let eolIndex = dataBuffer.indexOf(EOL, startIndex);
+	while (eolIndex >= 0 && eolIndex < 6) {
+		startIndex = eolIndex + 2;
+		eolIndex = dataBuffer.indexOf(EOL, startIndex);
+	}
 
 	// If EOL is at index >= 6, then the previous 6 bytes must be the data
 	while (eolIndex >= startIndex + 6) {
 		let index = dataBuffer.readInt16LE(eolIndex - 6);
 		let distance = dataBuffer.readFloatLE(eolIndex - 4);
-		if (index == 0) {
-			console.log('index:', index, 'distance:', distance);
-		}
+		console.log('index:', index, 'distance:', distance);
 
 		// Send data to SuperCollider through OSC
 		if (index >= 15) {
