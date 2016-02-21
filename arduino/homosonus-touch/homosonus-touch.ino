@@ -38,17 +38,17 @@ void sendDistance(int16_t index) {
 
 	index += SIDE;
 
-	#ifdef DEBUG
+#ifdef DEBUG
 	if (index == 0) {
 		Serial.print("index: ");
 		Serial.print(index);
 		Serial.print(" distance: ");
 		Serial.println(distanceSensors[index].distanceInMeters);
 	}
-	#else
+#else
 	Serial.write((const char *) &index, sizeof(index));
 	Serial.write((const char *) &distanceSensors[index].distanceInMeters, sizeof(distanceSensors[index].distanceInMeters));
 	Serial.println();
-	#endif
+#endif
 	Serial.flush();
 }
