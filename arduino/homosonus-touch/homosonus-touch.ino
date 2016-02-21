@@ -36,17 +36,17 @@ void sendDistance(int16_t index) {
 	// distanceInMeters => float   (4 bytes)
 	// EOL              => '\r\n'  (2 bytes)
 
-	index += SIDE;
+	const int16_t i = index + SIDE;
 
 #ifdef DEBUG
 	if (index == 0) {
 		Serial.print("index: ");
-		Serial.print(index);
+		Serial.print(i);
 		Serial.print(" distance: ");
 		Serial.println(distanceSensors[index].distanceInMeters);
 	}
 #else
-	Serial.write((const char *) &index, sizeof(index));
+	Serial.write((const char *) &i, sizeof(i));
 	Serial.write((const char *) &distanceSensors[index].distanceInMeters, sizeof(distanceSensors[index].distanceInMeters));
 	Serial.println();
 #endif
