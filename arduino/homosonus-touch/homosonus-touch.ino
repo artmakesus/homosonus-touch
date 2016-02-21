@@ -1,6 +1,9 @@
 #include "IRDistanceSensor.hpp"
 
 //#define DEBUG
+#define FRONT (15)
+#define BACK (0)
+#define SIDE (FRONT)
 
 static const int NUM_DISTANCE_SENSORS = 15;
 static const int FRAME_RATE = 10;
@@ -20,18 +23,20 @@ void setup() {
 void loop() {
 	for (int16_t i = 0; i < NUM_DISTANCE_SENSORS; i++) {
 		distanceSensors[i].update();
-		sendData(i);
+		sendDistance(i);
 	}
 
 	delay(FRAME_PERIOD_MS);
 }
 
-void sendData(int16_t index) {
+void sendDistance(int16_t index) {
 	// Serial data format
 	// ------------------
 	// index            => int16_t (2 bytes)
 	// distanceInMeters => float   (4 bytes)
 	// EOL              => '\r\n'  (2 bytes)
+
+	index += SIDE;
 
 	#ifdef DEBUG
 	if (index == 0) {
