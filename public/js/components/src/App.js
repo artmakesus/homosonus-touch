@@ -12,6 +12,41 @@ let fadeSpeed = 0.2;
 let ambientFadeInSpeed = 0.2;
 let ambientFadeOutSpeed = 1.4;
 
+let sounds = {};
+let soundModels = [
+	{ ref: 'ambient', src: 'sounds/ambient.wav' },
+	{ ref: 'back0',   src: 'sounds/user1/c0.wav' },
+	{ ref: 'back1',   src: 'sounds/user1/e0.wav' },
+	{ ref: 'back2',   src: 'sounds/user1/ds0.wav' },
+	{ ref: 'back3',   src: 'sounds/user1/b0.wav' },
+	{ ref: 'back4',   src: 'sounds/user1/g0.wav' },
+	{ ref: 'back5',   src: 'sounds/user1/c1.wav' },
+	{ ref: 'back6',   src: 'sounds/user1/e1.wav' },
+	{ ref: 'back7',   src: 'sounds/user1/ds1.wav' },
+	{ ref: 'back8',   src: 'sounds/user1/b1.wav' },
+	{ ref: 'back9',   src: 'sounds/user1/g1.wav' },
+	{ ref: 'back10',  src: 'sounds/user1/c2.wav' },
+	{ ref: 'back11',  src: 'sounds/user1/e2.wav' },
+	{ ref: 'back12',  src: 'sounds/user1/ds2.wav' },
+	{ ref: 'back13',  src: 'sounds/user1/b2.wav' },
+	{ ref: 'back14',  src: 'sounds/user1/g2.wav' },
+	{ ref: 'front0',  src: 'sounds/user2/c00.wav' },
+	{ ref: 'front1',  src: 'sounds/user2/e00.wav' },
+	{ ref: 'front2',  src: 'sounds/user2/ds00.wav' },
+	{ ref: 'front3',  src: 'sounds/user2/b00.wav' },
+	{ ref: 'front4',  src: 'sounds/user2/g00.wav' },
+	{ ref: 'front5',  src: 'sounds/user2/c11.wav' },
+	{ ref: 'front6',  src: 'sounds/user2/e11.wav' },
+	{ ref: 'front7',  src: 'sounds/user2/ds11.wav' },
+	{ ref: 'front8',  src: 'sounds/user2/b11.wav' },
+	{ ref: 'front9',  src: 'sounds/user2/g11.wav' },
+	{ ref: 'front10', src: 'sounds/user2/c22.wav' },
+	{ ref: 'front11', src: 'sounds/user2/e22.wav' },
+	{ ref: 'front12', src: 'sounds/user2/ds22.wav' },
+	{ ref: 'front13', src: 'sounds/user2/b22.wav' },
+	{ ref: 'front14', src: 'sounds/user2/g22.wav' },
+];
+
 let frontCircles = [],
     frontHeights = [],
     backCircles = [],
@@ -69,17 +104,7 @@ class App extends React.Component {
 		return (
 			<div id='app'>
 				{
-					this.state.sounds.map(function(sound) {
-						return <audio key={sound.ref}
-									  id={sound.ref}
-									  ref={sound.ref}
-									  src={sound.src}
-									  autoPlay
-									  loop />
-					})
-				}
-				{
-					this.state.soundsLoaded == this.state.sounds.length ?
+					this.state.soundsLoaded == soundModels.length ?
 					<canvas id='canvas' ref='canvas'></canvas> :
 					<p>Loaded {this.state.soundsLoaded} sounds..</p>
 				}
@@ -88,49 +113,13 @@ class App extends React.Component {
 	}
 	state = {
 		soundsLoaded: 0,
-		sounds: [
-			{ ref: 'ambient', src: 'sounds/ambient.wav' },
-			{ ref: 'back0',   src: 'sounds/user1/c0.wav' },
-			{ ref: 'back1',   src: 'sounds/user1/e0.wav' },
-			{ ref: 'back2',   src: 'sounds/user1/ds0.wav' },
-			{ ref: 'back3',   src: 'sounds/user1/b0.wav' },
-			{ ref: 'back4',   src: 'sounds/user1/g0.wav' },
-			{ ref: 'back5',   src: 'sounds/user1/c1.wav' },
-			{ ref: 'back6',   src: 'sounds/user1/e1.wav' },
-			{ ref: 'back7',   src: 'sounds/user1/ds1.wav' },
-			{ ref: 'back8',   src: 'sounds/user1/b1.wav' },
-			{ ref: 'back9',   src: 'sounds/user1/g1.wav' },
-			{ ref: 'back10',  src: 'sounds/user1/c2.wav' },
-			{ ref: 'back11',  src: 'sounds/user1/e2.wav' },
-			{ ref: 'back12',  src: 'sounds/user1/ds2.wav' },
-			{ ref: 'back13',  src: 'sounds/user1/b2.wav' },
-			{ ref: 'back14',  src: 'sounds/user1/g2.wav' },
-			{ ref: 'front0',  src: 'sounds/user2/c00.wav' },
-			{ ref: 'front1',  src: 'sounds/user2/e00.wav' },
-			{ ref: 'front2',  src: 'sounds/user2/ds00.wav' },
-			{ ref: 'front3',  src: 'sounds/user2/b00.wav' },
-			{ ref: 'front4',  src: 'sounds/user2/g00.wav' },
-			{ ref: 'front5',  src: 'sounds/user2/c11.wav' },
-			{ ref: 'front6',  src: 'sounds/user2/e11.wav' },
-			{ ref: 'front7',  src: 'sounds/user2/ds11.wav' },
-			{ ref: 'front8',  src: 'sounds/user2/b11.wav' },
-			{ ref: 'front9',  src: 'sounds/user2/g11.wav' },
-			{ ref: 'front10', src: 'sounds/user2/c22.wav' },
-			{ ref: 'front11', src: 'sounds/user2/e22.wav' },
-			{ ref: 'front12', src: 'sounds/user2/ds22.wav' },
-			{ ref: 'front13', src: 'sounds/user2/b22.wav' },
-			{ ref: 'front14', src: 'sounds/user2/g22.wav' },
-		],
 	};
 	componentDidMount() {
-		// Initialize Sounds
-		this.initializeSounds();
-
 		// Check whether app should send OSC messages (for SuperCollider)
 		this.fetchConfig();
 	}
 	componentDidUpdate() {
-		if (this.state.soundsLoaded == this.state.sounds.length) {
+		if (this.state.soundsLoaded == soundModels.length) {
 			this.resetSounds();
 			this.initializeCanvas();
 		}
@@ -143,37 +132,52 @@ class App extends React.Component {
 		}).done((config) => {
 			bUseOSC = config.bUseOSC;
 			bSimulate = config.bSimulate;
-			if (bUseOSC == false && bSimulate == false) {
-				this.fetchDistances();
+
+			if (bSimulate) {
+				this.initializeSounds();
+			} else {
+				if (bUseOSC == false) {
+					this.initializeSounds();
+					setInterval(this.fetchVolumes, 33);
+				}
 			}
 		}).fail((response) => {
 			console.log(response);
 		});
 	};
-	fetchDistances = () => {
+	fetchVolumes = () => {
 		$.ajax({
-			url: '/distances',
+			url: '/volumes',
 			method: 'GET',
-			dataType: 'json',
-		}).done((distances) => {
+		}).done((volumes) => {
+			for (let i = 0; i < frontHeights.length; i++) {
+				if (volumes.frontVolumes[i] < 0 || volumes.frontVolumes[i] > 1) {
+					console.log(volumes.frontVolumes[i]);
+				}
+				sounds['front' + i].volume = volumes.frontVolumes[i];
+				sounds['back' + i].volume = volumes.backVolumes[i];
+				sounds['ambient'].volume = volumes.ambientVolume;
+			}
 		}).fail((response) => {
-			console.log(response);
+			console.log('failed to get volumes');
 		});
 	};
 	initializeSounds = () => {
-		for (let i in this.state.sounds) {
-			let sound = this.state.sounds[i];
-			this.refs[sound.ref].volume = 0;
-			this.refs[sound.ref].addEventListener('loadeddata', () => {
+		for (let i in soundModels) {
+			let soundModel = soundModels[i];
+			let sound = new Audio(soundModel.src);
+			sound.volume = 0;
+			sound.addEventListener('loadeddata', () => {
 				let soundsLoaded = this.state.soundsLoaded + 1;
 				this.setState({ soundsLoaded: soundsLoaded });
 			});
+			sounds[soundModel.ref] = sound;
 		}
 	};
 	resetSounds() {
-		for (let i in this.state.sounds) {
-			let sound = this.state.sounds[i];
-			this.refs[sound.ref].currentTime = 0;
+		for (let i in soundModels) {
+			let soundModel = soundModels[i];
+			sounds[soundModel.ref].currentTime = 0;
 		}
 	}
 	initializeCanvas = () => {
@@ -182,11 +186,13 @@ class App extends React.Component {
 		window.addEventListener('resize', this.resize);
 
 		// Handle mouse
-		window.addEventListener('mousedown', this.mousedown);
-		window.addEventListener('mouseup', this.mouseup);
-		window.addEventListener('mousemove', this.mousemove);
-		window.addEventListener('dblclick', this.dblclick);
-		window.addEventListener('keyup', this.keyup);
+		if (bSimulate) {
+			window.addEventListener('mousedown', this.mousedown);
+			window.addEventListener('mouseup', this.mouseup);
+			window.addEventListener('mousemove', this.mousemove);
+			window.addEventListener('dblclick', this.dblclick);
+			window.addEventListener('keyup', this.keyup);
+		}
 
 		// Handle animation
 		this.ctx = canvas.getContext('2d');
@@ -249,7 +255,7 @@ class App extends React.Component {
 			ctx.stroke();
 			ctx.closePath();
 
-			let value = bDrawVolumes ? this.refs['back' + i].volume :
+			let value = bDrawVolumes ? sounds['back' + i].volume :
 			                           Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
 			ctx.font = '16px sans-serif';
 			ctx.fillStyle = 'red';
@@ -269,7 +275,7 @@ class App extends React.Component {
 			ctx.stroke();
 			ctx.closePath();
 
-			let value = bDrawVolumes ? this.refs['front' + i].volume :
+			let value = bDrawVolumes ? sounds['front' + i].volume :
 			                           Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
 			ctx.font = '16px sans-serif';
 			ctx.fillStyle = 'green';
@@ -416,41 +422,43 @@ class App extends React.Component {
 		});
 	};
 	updateSounds = (frontHeights, backHeights) => {
-		let isTouching = false;
-		let touchingIndexes = [];
+		if (bSimulate) {
+			let isTouching = false;
+			let touchingIndexes = [];
 
-		// Check for touch
-		for (let i = 0; i < frontHeights.length; i++) {
-			if (frontHeights[i] > 0.05 && frontHeights[i] < 0.95 && backHeights[i] > 0.05 && backHeights[i] < 0.95) {
-				isTouching = true;
-				touchingIndexes.push(i);
+			// Check for touch
+			for (let i = 0; i < frontHeights.length; i++) {
+				if (frontHeights[i] > 0.05 && frontHeights[i] < 0.95 && backHeights[i] > 0.05 && backHeights[i] < 0.95) {
+					isTouching = true;
+					touchingIndexes.push(i);
+				}
 			}
-		}
 
-		// Adjust sound volumes
-		for (let i = 0; i < frontHeights.length; i++) {
-			let sound = this.refs['front' + i];
-			if ((isTouching == false || (isTouching && touchingIndexes.indexOf(i) >= 0)) &&
-			    frontHeights[i] > 0.05 && frontHeights[i] < 0.95) {
-				sound.volume = (sound.volume + delta * fadeSpeed) > 1 ? 1 : sound.volume + delta * fadeSpeed;
+			// Adjust sound volumes
+			for (let i = 0; i < frontHeights.length; i++) {
+				let sound = sounds['front' + i];
+				if ((isTouching == false || (isTouching && touchingIndexes.indexOf(i) >= 0)) &&
+					frontHeights[i] > 0.05 && frontHeights[i] < 0.95) {
+					sound.volume = (sound.volume + delta * fadeSpeed) > 1 ? 1 : sound.volume + delta * fadeSpeed;
+				} else {
+					sound.volume = (sound.volume - delta * fadeSpeed) < 0 ? 0 : sound.volume - delta * fadeSpeed;
+				}
+			}
+			for (let i = 0; i < backHeights.length; i++) {
+				let sound = sounds['back' + i];
+				if ((isTouching == false || (isTouching && touchingIndexes.indexOf(i) >= 0)) &&
+					backHeights[i] > 0.05 && backHeights[i] < 0.95) {
+					sound.volume = (sound.volume + delta * fadeSpeed) > 1 ? 1 : sound.volume + delta * fadeSpeed;
+				} else {
+					sound.volume = (sound.volume - delta * fadeSpeed) < 0 ? 0 : sound.volume - delta * fadeSpeed;
+				}
+			}
+
+			if (isTouching) {
+				sounds['ambient'].volume = sounds['ambient'].volume - delta < 0 ? 0 : sounds['ambient'].volume - delta * ambientFadeOutSpeed;
 			} else {
-				sound.volume = (sound.volume - delta * fadeSpeed) < 0 ? 0 : sound.volume - delta * fadeSpeed;
+				sounds['ambient'].volume = sounds['ambient'].volume + delta > 1 ? 1 : sounds['ambient'].volume + delta * ambientFadeInSpeed;
 			}
-		}
-		for (let i = 0; i < backHeights.length; i++) {
-			let sound = this.refs['back' + i];
-			if ((isTouching == false || (isTouching && touchingIndexes.indexOf(i) >= 0)) &&
-			    backHeights[i] > 0.05 && backHeights[i] < 0.95) {
-				sound.volume = (sound.volume + delta * fadeSpeed) > 1 ? 1 : sound.volume + delta * fadeSpeed;
-			} else {
-				sound.volume = (sound.volume - delta * fadeSpeed) < 0 ? 0 : sound.volume - delta * fadeSpeed;
-			}
-		}
-
-		if (isTouching) {
-			this.refs.ambient.volume = this.refs.ambient.volume - delta < 0 ? 0 : this.refs.ambient.volume - delta * ambientFadeOutSpeed;
-		} else {
-			this.refs.ambient.volume = this.refs.ambient.volume + delta > 1 ? 1 : this.refs.ambient.volume + delta * ambientFadeInSpeed;
 		}
 	};
 	addFrontCircle = () => {

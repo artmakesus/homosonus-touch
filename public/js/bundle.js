@@ -76,6 +76,9 @@
 	var ambientFadeInSpeed = 0.2;
 	var ambientFadeOutSpeed = 1.4;
 
+	var sounds = {};
+	var soundModels = [{ ref: 'ambient', src: 'sounds/ambient.wav' }, { ref: 'back0', src: 'sounds/user1/c0.wav' }, { ref: 'back1', src: 'sounds/user1/e0.wav' }, { ref: 'back2', src: 'sounds/user1/ds0.wav' }, { ref: 'back3', src: 'sounds/user1/b0.wav' }, { ref: 'back4', src: 'sounds/user1/g0.wav' }, { ref: 'back5', src: 'sounds/user1/c1.wav' }, { ref: 'back6', src: 'sounds/user1/e1.wav' }, { ref: 'back7', src: 'sounds/user1/ds1.wav' }, { ref: 'back8', src: 'sounds/user1/b1.wav' }, { ref: 'back9', src: 'sounds/user1/g1.wav' }, { ref: 'back10', src: 'sounds/user1/c2.wav' }, { ref: 'back11', src: 'sounds/user1/e2.wav' }, { ref: 'back12', src: 'sounds/user1/ds2.wav' }, { ref: 'back13', src: 'sounds/user1/b2.wav' }, { ref: 'back14', src: 'sounds/user1/g2.wav' }, { ref: 'front0', src: 'sounds/user2/c00.wav' }, { ref: 'front1', src: 'sounds/user2/e00.wav' }, { ref: 'front2', src: 'sounds/user2/ds00.wav' }, { ref: 'front3', src: 'sounds/user2/b00.wav' }, { ref: 'front4', src: 'sounds/user2/g00.wav' }, { ref: 'front5', src: 'sounds/user2/c11.wav' }, { ref: 'front6', src: 'sounds/user2/e11.wav' }, { ref: 'front7', src: 'sounds/user2/ds11.wav' }, { ref: 'front8', src: 'sounds/user2/b11.wav' }, { ref: 'front9', src: 'sounds/user2/g11.wav' }, { ref: 'front10', src: 'sounds/user2/c22.wav' }, { ref: 'front11', src: 'sounds/user2/e22.wav' }, { ref: 'front12', src: 'sounds/user2/ds22.wav' }, { ref: 'front13', src: 'sounds/user2/b22.wav' }, { ref: 'front14', src: 'sounds/user2/g22.wav' }];
+
 	var frontCircles = [],
 	    frontHeights = [],
 	    backCircles = [],
@@ -143,8 +146,7 @@
 			}
 
 			return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(App)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this), _this.state = {
-				soundsLoaded: 0,
-				sounds: [{ ref: 'ambient', src: 'sounds/ambient.wav' }, { ref: 'back0', src: 'sounds/user1/c0.wav' }, { ref: 'back1', src: 'sounds/user1/e0.wav' }, { ref: 'back2', src: 'sounds/user1/ds0.wav' }, { ref: 'back3', src: 'sounds/user1/b0.wav' }, { ref: 'back4', src: 'sounds/user1/g0.wav' }, { ref: 'back5', src: 'sounds/user1/c1.wav' }, { ref: 'back6', src: 'sounds/user1/e1.wav' }, { ref: 'back7', src: 'sounds/user1/ds1.wav' }, { ref: 'back8', src: 'sounds/user1/b1.wav' }, { ref: 'back9', src: 'sounds/user1/g1.wav' }, { ref: 'back10', src: 'sounds/user1/c2.wav' }, { ref: 'back11', src: 'sounds/user1/e2.wav' }, { ref: 'back12', src: 'sounds/user1/ds2.wav' }, { ref: 'back13', src: 'sounds/user1/b2.wav' }, { ref: 'back14', src: 'sounds/user1/g2.wav' }, { ref: 'front0', src: 'sounds/user2/c00.wav' }, { ref: 'front1', src: 'sounds/user2/e00.wav' }, { ref: 'front2', src: 'sounds/user2/ds00.wav' }, { ref: 'front3', src: 'sounds/user2/b00.wav' }, { ref: 'front4', src: 'sounds/user2/g00.wav' }, { ref: 'front5', src: 'sounds/user2/c11.wav' }, { ref: 'front6', src: 'sounds/user2/e11.wav' }, { ref: 'front7', src: 'sounds/user2/ds11.wav' }, { ref: 'front8', src: 'sounds/user2/b11.wav' }, { ref: 'front9', src: 'sounds/user2/g11.wav' }, { ref: 'front10', src: 'sounds/user2/c22.wav' }, { ref: 'front11', src: 'sounds/user2/e22.wav' }, { ref: 'front12', src: 'sounds/user2/ds22.wav' }, { ref: 'front13', src: 'sounds/user2/b22.wav' }, { ref: 'front14', src: 'sounds/user2/g22.wav' }]
+				soundsLoaded: 0
 			}, _this.fetchConfig = function () {
 				_jquery2.default.ajax({
 					url: '/config',
@@ -153,28 +155,44 @@
 				}).done(function (config) {
 					bUseOSC = config.bUseOSC;
 					bSimulate = config.bSimulate;
-					if (bUseOSC == false && bSimulate == false) {
-						_this.fetchDistances();
+
+					if (bSimulate) {
+						_this.initializeSounds();
+					} else {
+						if (bUseOSC == false) {
+							_this.initializeSounds();
+							setInterval(_this.fetchVolumes, 33);
+						}
 					}
 				}).fail(function (response) {
 					console.log(response);
 				});
-			}, _this.fetchDistances = function () {
+			}, _this.fetchVolumes = function () {
 				_jquery2.default.ajax({
-					url: '/distances',
-					method: 'GET',
-					dataType: 'json'
-				}).done(function (distances) {}).fail(function (response) {
-					console.log(response);
+					url: '/volumes',
+					method: 'GET'
+				}).done(function (volumes) {
+					for (var i = 0; i < frontHeights.length; i++) {
+						if (volumes.frontVolumes[i] < 0 || volumes.frontVolumes[i] > 1) {
+							console.log(volumes.frontVolumes[i]);
+						}
+						sounds['front' + i].volume = volumes.frontVolumes[i];
+						sounds['back' + i].volume = volumes.backVolumes[i];
+						sounds['ambient'].volume = volumes.ambientVolume;
+					}
+				}).fail(function (response) {
+					console.log('failed to get volumes');
 				});
 			}, _this.initializeSounds = function () {
-				for (var i in _this.state.sounds) {
-					var sound = _this.state.sounds[i];
-					_this.refs[sound.ref].volume = 0;
-					_this.refs[sound.ref].addEventListener('loadeddata', function () {
+				for (var i in soundModels) {
+					var soundModel = soundModels[i];
+					var sound = new Audio(soundModel.src);
+					sound.volume = 0;
+					sound.addEventListener('loadeddata', function () {
 						var soundsLoaded = _this.state.soundsLoaded + 1;
 						_this.setState({ soundsLoaded: soundsLoaded });
 					});
+					sounds[soundModel.ref] = sound;
 				}
 			}, _this.initializeCanvas = function () {
 				// Handle window resize
@@ -182,11 +200,13 @@
 				window.addEventListener('resize', _this.resize);
 
 				// Handle mouse
-				window.addEventListener('mousedown', _this.mousedown);
-				window.addEventListener('mouseup', _this.mouseup);
-				window.addEventListener('mousemove', _this.mousemove);
-				window.addEventListener('dblclick', _this.dblclick);
-				window.addEventListener('keyup', _this.keyup);
+				if (bSimulate) {
+					window.addEventListener('mousedown', _this.mousedown);
+					window.addEventListener('mouseup', _this.mouseup);
+					window.addEventListener('mousemove', _this.mousemove);
+					window.addEventListener('dblclick', _this.dblclick);
+					window.addEventListener('keyup', _this.keyup);
+				}
 
 				// Handle animation
 				_this.ctx = canvas.getContext('2d');
@@ -248,7 +268,7 @@
 					ctx.stroke();
 					ctx.closePath();
 
-					var value = bDrawVolumes ? _this.refs['back' + i].volume : Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
+					var value = bDrawVolumes ? sounds['back' + i].volume : Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
 					ctx.font = '16px sans-serif';
 					ctx.fillStyle = 'red';
 					ctx.fillText(value.toFixed(2), x + 8, 24);
@@ -267,7 +287,7 @@
 					ctx.stroke();
 					ctx.closePath();
 
-					var value = bDrawVolumes ? _this.refs['front' + i].volume : Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
+					var value = bDrawVolumes ? sounds['front' + i].volume : Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
 					ctx.font = '16px sans-serif';
 					ctx.fillStyle = 'green';
 					ctx.fillText(value.toFixed(2), x + 8, 48);
@@ -399,39 +419,41 @@
 					console.log('Failed to send height data');
 				});
 			}, _this.updateSounds = function (frontHeights, backHeights) {
-				var isTouching = false;
-				var touchingIndexes = [];
+				if (bSimulate) {
+					var isTouching = false;
+					var touchingIndexes = [];
 
-				// Check for touch
-				for (var i = 0; i < frontHeights.length; i++) {
-					if (frontHeights[i] > 0.05 && frontHeights[i] < 0.95 && backHeights[i] > 0.05 && backHeights[i] < 0.95) {
-						isTouching = true;
-						touchingIndexes.push(i);
+					// Check for touch
+					for (var i = 0; i < frontHeights.length; i++) {
+						if (frontHeights[i] > 0.05 && frontHeights[i] < 0.95 && backHeights[i] > 0.05 && backHeights[i] < 0.95) {
+							isTouching = true;
+							touchingIndexes.push(i);
+						}
 					}
-				}
 
-				// Adjust sound volumes
-				for (var i = 0; i < frontHeights.length; i++) {
-					var sound = _this.refs['front' + i];
-					if ((isTouching == false || isTouching && touchingIndexes.indexOf(i) >= 0) && frontHeights[i] > 0.05 && frontHeights[i] < 0.95) {
-						sound.volume = sound.volume + delta * fadeSpeed > 1 ? 1 : sound.volume + delta * fadeSpeed;
+					// Adjust sound volumes
+					for (var i = 0; i < frontHeights.length; i++) {
+						var sound = sounds['front' + i];
+						if ((isTouching == false || isTouching && touchingIndexes.indexOf(i) >= 0) && frontHeights[i] > 0.05 && frontHeights[i] < 0.95) {
+							sound.volume = sound.volume + delta * fadeSpeed > 1 ? 1 : sound.volume + delta * fadeSpeed;
+						} else {
+							sound.volume = sound.volume - delta * fadeSpeed < 0 ? 0 : sound.volume - delta * fadeSpeed;
+						}
+					}
+					for (var i = 0; i < backHeights.length; i++) {
+						var sound = sounds['back' + i];
+						if ((isTouching == false || isTouching && touchingIndexes.indexOf(i) >= 0) && backHeights[i] > 0.05 && backHeights[i] < 0.95) {
+							sound.volume = sound.volume + delta * fadeSpeed > 1 ? 1 : sound.volume + delta * fadeSpeed;
+						} else {
+							sound.volume = sound.volume - delta * fadeSpeed < 0 ? 0 : sound.volume - delta * fadeSpeed;
+						}
+					}
+
+					if (isTouching) {
+						sounds['ambient'].volume = sounds['ambient'].volume - delta < 0 ? 0 : sounds['ambient'].volume - delta * ambientFadeOutSpeed;
 					} else {
-						sound.volume = sound.volume - delta * fadeSpeed < 0 ? 0 : sound.volume - delta * fadeSpeed;
+						sounds['ambient'].volume = sounds['ambient'].volume + delta > 1 ? 1 : sounds['ambient'].volume + delta * ambientFadeInSpeed;
 					}
-				}
-				for (var i = 0; i < backHeights.length; i++) {
-					var sound = _this.refs['back' + i];
-					if ((isTouching == false || isTouching && touchingIndexes.indexOf(i) >= 0) && backHeights[i] > 0.05 && backHeights[i] < 0.95) {
-						sound.volume = sound.volume + delta * fadeSpeed > 1 ? 1 : sound.volume + delta * fadeSpeed;
-					} else {
-						sound.volume = sound.volume - delta * fadeSpeed < 0 ? 0 : sound.volume - delta * fadeSpeed;
-					}
-				}
-
-				if (isTouching) {
-					_this.refs.ambient.volume = _this.refs.ambient.volume - delta < 0 ? 0 : _this.refs.ambient.volume - delta * ambientFadeOutSpeed;
-				} else {
-					_this.refs.ambient.volume = _this.refs.ambient.volume + delta > 1 ? 1 : _this.refs.ambient.volume + delta * ambientFadeInSpeed;
 				}
 			}, _this.addFrontCircle = function () {
 				frontCircles.push({
@@ -461,15 +483,7 @@
 				return _react2.default.createElement(
 					'div',
 					{ id: 'app' },
-					this.state.sounds.map(function (sound) {
-						return _react2.default.createElement('audio', { key: sound.ref,
-							id: sound.ref,
-							ref: sound.ref,
-							src: sound.src,
-							autoPlay: true,
-							loop: true });
-					}),
-					this.state.soundsLoaded == this.state.sounds.length ? _react2.default.createElement('canvas', { id: 'canvas', ref: 'canvas' }) : _react2.default.createElement(
+					this.state.soundsLoaded == soundModels.length ? _react2.default.createElement('canvas', { id: 'canvas', ref: 'canvas' }) : _react2.default.createElement(
 						'p',
 						null,
 						'Loaded ',
@@ -481,16 +495,13 @@
 		}, {
 			key: 'componentDidMount',
 			value: function componentDidMount() {
-				// Initialize Sounds
-				this.initializeSounds();
-
 				// Check whether app should send OSC messages (for SuperCollider)
 				this.fetchConfig();
 			}
 		}, {
 			key: 'componentDidUpdate',
 			value: function componentDidUpdate() {
-				if (this.state.soundsLoaded == this.state.sounds.length) {
+				if (this.state.soundsLoaded == soundModels.length) {
 					this.resetSounds();
 					this.initializeCanvas();
 				}
@@ -498,9 +509,9 @@
 		}, {
 			key: 'resetSounds',
 			value: function resetSounds() {
-				for (var i in this.state.sounds) {
-					var sound = this.state.sounds[i];
-					this.refs[sound.ref].currentTime = 0;
+				for (var i in soundModels) {
+					var soundModel = soundModels[i];
+					sounds[soundModel.ref].currentTime = 0;
 				}
 			}
 		}, {

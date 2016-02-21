@@ -1,9 +1,13 @@
 'use strict'
 
 // Configuration
+const frameRate = 30;
 const bUseOSC = false;
-const bSimulate = true;
+const bSimulate = false;
 const nDistanceSensors = 30;
+const fadeSpeed = 0.2;
+const ambientFadeInSpeed = 0.2;
+const ambientFadeOutSpeed = 1.4;
 
 // Modules
 const osc = require('node-osc');
@@ -18,6 +22,8 @@ const mcuManufacturer = 'Arduino';
 let mcuPorts = [];
 let dataBuffer = new Buffer(0);
 
+let now = 0, then = 0, delta = 0;
+
 let frontHeights = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     backHeights  = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
@@ -26,60 +32,17 @@ if (bUseOSC) {
 	var oscClient = new osc.Client('127.0.0.1', 57120);
 }
 
-setInterval(findArduino, 1000);
-
-function findArduino() {
-	serialport.list(function(error, ports) {
-		ports.forEach(function(port) {
-			if (mcuPorts.length > 2) {
-				return;
-			}
-
-			for (let i in mcuPorts) {
-				if (mcuPorts[i].path == port.comName) {
-					return;
-				}
-			}
-
-			if (port.manufacturer && port.manufacturer.indexOf(mcuManufacturer) >= 0) {
-				let mcuPort = new serialport.SerialPort(port.comName, {
-					baudrate: 9600,
-				});
-
-				mcuPort.open(function(error) {
-					if (error) {
-						console.log(error);
-						return;
-					}
-
-					console.log('Arduino connected');
-
-					mcuPorts.push(mcuPort);
-
-					mcuPort.on('data', function(data) {
-						processData(data);
-					});
-
-					mcuPort.on('close', function(error) {
-						if (error) {
-							console.log(error);
-							return;
-						}
-
-						console.log('Arduino disconnected');
-
-						let mcuPortIndex = mcuPorts.indexOf(mcuPort);
-						if (mcuPortIndex >= 0) {
-							mcuPorts.splice(mcuPortIndex, 1);
-						}
-					});
-				});
-			}
-		});
-	});
+// Volumes
+if (!bSimulate) {
+	var frontVolumes = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	    backVolumes  = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+		ambientVolume = 0;
 }
 
 function normalizeDistance(distance) {
+	if (isNaN(distance)) {
+		distance = 0;
+	}
 	if (distance < 0.2) {
 		distance = 0.2;
 	} else if (distance > 1.5) {
@@ -95,8 +58,8 @@ function processData(data) {
 
 	let startIndex = 0;
 	let eolIndex = dataBuffer.indexOf(EOL, startIndex);
-	while (eolIndex >= 0 && eolIndex < 6) {
-		startIndex = eolIndex + 2;
+	if (eolIndex >= 0 && eolIndex < 6) {
+		dataBuffer = dataBuffer.slice(eolIndex + 2);
 		eolIndex = dataBuffer.indexOf(EOL, startIndex);
 	}
 
@@ -104,21 +67,14 @@ function processData(data) {
 	while (eolIndex >= startIndex + 6) {
 		let index = dataBuffer.readInt16LE(eolIndex - 6);
 		let distance = dataBuffer.readFloatLE(eolIndex - 4);
-		console.log('index:', index, 'distance:', distance);
 
-		// Send data to SuperCollider through OSC
-		if (bUseOSC && bSimulate == false) {
-			if (index >= 15) {
-				oscClient.send('/front', index, normalizeDistance(distance));
-			} else {
-				oscClient.send('/back', index, normalizeDistance(distance));
-			}
-		} else {
-			if (index >= 15) {
-				frontHeights[index - 15] = normalizeDistance(distance);
-			} else {
-				backHeights[index] = normalizeDistance(distance);
-			}
+		// Update front and back heights
+		if (index >= 15 && index < 30) {
+			frontHeights[index - 15] = normalizeDistance(distance);
+			console.log(index, frontHeights[index - 15]);
+		} else if (index >= 0 && index < 15) {
+			backHeights[index] = normalizeDistance(distance);
+			console.log(index, backHeights[index]);
 		}
 
 		startIndex = eolIndex + 2;
@@ -134,18 +90,18 @@ function processData(data) {
 	}
 }
 
-if (bSimulate) {
-	app.use(express.static(__dirname + '/public'));
-	app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.static(__dirname + '/public'));
+app.use(bodyParser.urlencoded({ extended: false }));
 
-	app.get('/config', function(req, res) {
-		res.send({
-			bUseOSC: bUseOSC,
-			bSimulate: bSimulate,
-		});
+app.get('/config', function(req, res) {
+	res.send({
+		bUseOSC: bUseOSC,
+		bSimulate: bSimulate,
 	});
+});
 
-	if (bSimulate && bUseOSC) {
+if (bSimulate) {
+	if (bUseOSC) {
 		app.post('/distances', function(req, res) {
 			try {
 				frontHeights = JSON.parse(req.body.frontHeights);
@@ -163,10 +119,111 @@ if (bSimulate) {
 		});
 	}
 } else {
-	app.get('/distances', function(req, res) {
+	setInterval(findArduino, 1000);
+	setInterval(updateSuperCollider, 1000 / frameRate);
+
+	function findArduino() {
+		serialport.list(function(error, ports) {
+			ports.forEach(function(port) {
+				if (mcuPorts.length > 2) {
+					return;
+				}
+
+				for (let i in mcuPorts) {
+					if (mcuPorts[i].path == port.comName) {
+						return;
+					}
+				}
+
+				if (port.manufacturer && port.manufacturer.indexOf(mcuManufacturer) >= 0) {
+					let mcuPort = new serialport.SerialPort(port.comName, {
+						baudrate: 9600,
+					});
+
+					mcuPort.open(function(error) {
+						if (error) {
+							console.log(error);
+							return;
+						}
+
+						console.log('Arduino connected');
+
+						mcuPorts.push(mcuPort);
+
+						mcuPort.on('data', function(data) {
+							processData(data);
+						});
+
+						mcuPort.on('close', function(error) {
+							if (error) {
+								console.log(error);
+								return;
+							}
+
+							console.log('Arduino disconnected');
+
+							let mcuPortIndex = mcuPorts.indexOf(mcuPort);
+							if (mcuPortIndex >= 0) {
+								mcuPorts.splice(mcuPortIndex, 1);
+							}
+						});
+					});
+				}
+			});
+		});
+	}
+
+	function updateSuperCollider() {
+		let isTouching = false;
+		let touchingIndexes = [];
+
+		// Update time
+		if (then == 0) {
+			then = Date.now();
+		} else {
+			then = now;
+		}
+		now = Date.now();
+		delta = (now - then) * 0.001;
+
+		// Check for touch
+		for (let i = 0; i < frontHeights.length; i++) {
+			if (frontHeights[i] > 0.05 && frontHeights[i] < 0.95 && backHeights[i] > 0.05 && backHeights[i] < 0.95) {
+				isTouching = true;
+				touchingIndexes.push(i);
+			}
+		}
+
+		// Adjust sound volumes
+		for (let i = 0; i < frontHeights.length; i++) {
+			if ((isTouching == false || (isTouching && touchingIndexes.indexOf(i) >= 0)) && frontHeights[i] > 0.05 && frontHeights[i] < 0.95) {
+				frontVolumes[i] = frontVolumes[i] + delta * fadeSpeed > 1 ? 1 : frontVolumes[i] + delta * fadeSpeed;
+			} else {
+				frontVolumes[i] = frontVolumes[i] - delta * fadeSpeed < 0 ? 0 : frontVolumes[i] - delta * fadeSpeed;
+			}
+		}
+		for (let i = 0; i < backHeights.length; i++) {
+			if ((isTouching == false || (isTouching && touchingIndexes.indexOf(i) >= 0)) &&
+			    backHeights[i] > 0.05 && backHeights[i] < 0.95) {
+				backVolumes[i] = (backVolumes[i] + delta * fadeSpeed) > 1 ? 1 : backVolumes[i] + delta * fadeSpeed;
+			} else {
+				backVolumes[i] = (backVolumes[i] - delta * fadeSpeed) < 0 ? 0 : backVolumes[i] - delta * fadeSpeed;
+			}
+		}
+
+		if (isTouching) {
+			ambientVolume = ambientVolume - delta < 0 ? 0 : ambientVolume - delta * ambientFadeOutSpeed;
+		} else {
+			ambientVolume = ambientVolume + delta > 1 ? 1 : ambientVolume + delta * ambientFadeInSpeed;
+		}
+
+	}
+
+	app.get('/volumes', function(req, res) {
 		res.send({
-			frontHeights: frontHeights,
-			backHeights: backHeights,
+			frontVolumes: frontVolumes,
+			backVolumes: backVolumes,
+			ambientVolume: ambientVolume,
 		});
 	});
 }
