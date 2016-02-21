@@ -18,19 +18,14 @@ const mcuManufacturer = 'Arduino';
 let mcuPorts = [];
 let dataBuffer = new Buffer(0);
 
+let frontHeights = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    backHeights  = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
 // OSC
-let oscClient = new osc.Client('127.0.0.1', 57120);
+if (bUseOSC) {
+	var oscClient = new osc.Client('127.0.0.1', 57120);
+}
 
-serialport.list(function(error, ports) {
-	ports.forEach(function(port) {
-		if (!mcuPort && port.manufacturer && port.manufacturer.indexOf(mcuManufacturer) >= 0) {
-			mcuPort = new serialport.SerialPort(port.comName, {
-				baudrate: 9600,
-			});
-
-			mcuPort.open(function(error) {
-				if (error) {
-					console.log(error);
 setInterval(findArduino, 1000);
 
 function findArduino() {
@@ -112,10 +107,18 @@ function processData(data) {
 		console.log('index:', index, 'distance:', distance);
 
 		// Send data to SuperCollider through OSC
-		if (index >= 15) {
-			oscClient.send('/front', index, normalizeDistance(distance));
+		if (bUseOSC && bSimulate == false) {
+			if (index >= 15) {
+				oscClient.send('/front', index, normalizeDistance(distance));
+			} else {
+				oscClient.send('/back', index, normalizeDistance(distance));
+			}
 		} else {
-			oscClient.send('/back', index, normalizeDistance(distance));
+			if (index >= 15) {
+				frontHeights[index - 15] = normalizeDistance(distance);
+			} else {
+				backHeights[index] = normalizeDistance(distance);
+			}
 		}
 
 		startIndex = eolIndex + 2;
@@ -135,24 +138,36 @@ if (bSimulate) {
 	app.use(express.static(__dirname + '/public'));
 	app.use(bodyParser.urlencoded({ extended: false }));
 
-	app.get('/supercollider', function(req, res) {
-		res.send(bUseOSC);
+	app.get('/config', function(req, res) {
+		res.send({
+			bUseOSC: bUseOSC,
+			bSimulate: bSimulate,
+		});
 	});
 
-	app.post('/data', function(req, res) {
-		try {
-			let frontHeights = JSON.parse(req.body.frontHeights);
-			let backHeights = JSON.parse(req.body.backHeights);
-			for (let i = 0; i < frontHeights.length; i++) {
-				client.send('/front', i, frontHeights[i]);
+	if (bSimulate && bUseOSC) {
+		app.post('/distances', function(req, res) {
+			try {
+				frontHeights = JSON.parse(req.body.frontHeights);
+				backHeights = JSON.parse(req.body.backHeights);
+				for (let i = 0; i < frontHeights.length; i++) {
+					client.send('/front', i, frontHeights[i]);
+				}
+				for (let i = 0; i < backHeights.length; i++) {
+					client.send('/back', i, backHeights[i]);
+				}
+			} catch (error) {
+				console.log(error);
 			}
-			for (let i = 0; i < backHeights.length; i++) {
-				client.send('/back', i, backHeights[i]);
-			}
-		} catch (error) {
-			console.log(error);
-		}
-		res.sendStatus(200);
+			res.sendStatus(200);
+		});
+	}
+} else {
+	app.get('/distances', function(req, res) {
+		res.send({
+			frontHeights: frontHeights,
+			backHeights: backHeights,
+		});
 	});
 }
 
