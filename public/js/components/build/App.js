@@ -25,8 +25,9 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 // Configuration
 var bUseOSC = false;
 var bDrawVolumes = true; // If false, draw sensor distances
-var volumeSpeed = 0.2;
-var ambientVolumeSpeed = 1.4;
+var fadeSpeed = 0.2;
+var ambientFadeInSpeed = 0.2;
+var ambientFadeOutSpeed = 1.4;
 
 var frontCircles = [],
     backCircles = [];
@@ -343,24 +344,24 @@ var App = function (_React$Component) {
 			for (var i = 0; i < frontHeights.length; i++) {
 				var sound = _this.refs['front' + i];
 				if ((isTouching == false || isTouching && touchingIndexes.indexOf(i) >= 0) && frontHeights[i] > 0.05 && frontHeights[i] < 0.95) {
-					sound.volume = sound.volume + delta * volumeSpeed > 1 ? 1 : sound.volume + delta * volumeSpeed;
+					sound.volume = sound.volume + delta * fadeSpeed > 1 ? 1 : sound.volume + delta * fadeSpeed;
 				} else {
-					sound.volume = sound.volume - delta * volumeSpeed < 0 ? 0 : sound.volume - delta * volumeSpeed;
+					sound.volume = sound.volume - delta * fadeSpeed < 0 ? 0 : sound.volume - delta * fadeSpeed;
 				}
 			}
 			for (var i = 0; i < backHeights.length; i++) {
 				var sound = _this.refs['back' + i];
 				if ((isTouching == false || isTouching && touchingIndexes.indexOf(i) >= 0) && backHeights[i] > 0.05 && backHeights[i] < 0.95) {
-					sound.volume = sound.volume + delta * volumeSpeed > 1 ? 1 : sound.volume + delta * volumeSpeed;
+					sound.volume = sound.volume + delta * fadeSpeed > 1 ? 1 : sound.volume + delta * fadeSpeed;
 				} else {
-					sound.volume = sound.volume - delta * volumeSpeed < 0 ? 0 : sound.volume - delta * volumeSpeed;
+					sound.volume = sound.volume - delta * fadeSpeed < 0 ? 0 : sound.volume - delta * fadeSpeed;
 				}
 			}
 
 			if (isTouching) {
-				_this.refs.ambient.volume = _this.refs.ambient.volume - delta < 0 ? 0 : _this.refs.ambient.volume - delta * ambientVolumeSpeed;
+				_this.refs.ambient.volume = _this.refs.ambient.volume - delta < 0 ? 0 : _this.refs.ambient.volume - delta * ambientFadeOutSpeed;
 			} else {
-				_this.refs.ambient.volume = _this.refs.ambient.volume + delta > 1 ? 1 : _this.refs.ambient.volume + delta * ambientVolumeSpeed;
+				_this.refs.ambient.volume = _this.refs.ambient.volume + delta > 1 ? 1 : _this.refs.ambient.volume + delta * ambientFadeInSpeed;
 			}
 		}, _this.addFrontCircle = function () {
 			frontCircles.push({

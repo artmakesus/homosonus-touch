@@ -7,8 +7,9 @@ import $ from 'jquery'
 // Configuration
 let bUseOSC = false;
 let bDrawVolumes = true; // If false, draw sensor distances
-let volumeSpeed = 0.2;
-let ambientVolumeSpeed = 1.4;
+let fadeSpeed = 0.2;
+let ambientFadeInSpeed = 0.2;
+let ambientFadeOutSpeed = 1.4;
 
 let frontCircles = [],
     backCircles = [];
@@ -407,25 +408,25 @@ class App extends React.Component {
 			let sound = this.refs['front' + i];
 			if ((isTouching == false || (isTouching && touchingIndexes.indexOf(i) >= 0)) &&
 			    frontHeights[i] > 0.05 && frontHeights[i] < 0.95) {
-				sound.volume = (sound.volume + delta * volumeSpeed) > 1 ? 1 : sound.volume + delta * volumeSpeed;
+				sound.volume = (sound.volume + delta * fadeSpeed) > 1 ? 1 : sound.volume + delta * fadeSpeed;
 			} else {
-				sound.volume = (sound.volume - delta * volumeSpeed) < 0 ? 0 : sound.volume - delta * volumeSpeed;
+				sound.volume = (sound.volume - delta * fadeSpeed) < 0 ? 0 : sound.volume - delta * fadeSpeed;
 			}
 		}
 		for (let i = 0; i < backHeights.length; i++) {
 			let sound = this.refs['back' + i];
 			if ((isTouching == false || (isTouching && touchingIndexes.indexOf(i) >= 0)) &&
 			    backHeights[i] > 0.05 && backHeights[i] < 0.95) {
-				sound.volume = (sound.volume + delta * volumeSpeed) > 1 ? 1 : sound.volume + delta * volumeSpeed;
+				sound.volume = (sound.volume + delta * fadeSpeed) > 1 ? 1 : sound.volume + delta * fadeSpeed;
 			} else {
-				sound.volume = (sound.volume - delta * volumeSpeed) < 0 ? 0 : sound.volume - delta * volumeSpeed;
+				sound.volume = (sound.volume - delta * fadeSpeed) < 0 ? 0 : sound.volume - delta * fadeSpeed;
 			}
 		}
 
 		if (isTouching) {
-			this.refs.ambient.volume = this.refs.ambient.volume - delta < 0 ? 0 : this.refs.ambient.volume - delta * ambientVolumeSpeed;
+			this.refs.ambient.volume = this.refs.ambient.volume - delta < 0 ? 0 : this.refs.ambient.volume - delta * ambientFadeOutSpeed;
 		} else {
-			this.refs.ambient.volume = this.refs.ambient.volume + delta > 1 ? 1 : this.refs.ambient.volume + delta * ambientVolumeSpeed;
+			this.refs.ambient.volume = this.refs.ambient.volume + delta > 1 ? 1 : this.refs.ambient.volume + delta * ambientFadeInSpeed;
 		}
 	};
 	addFrontCircle = () => {
