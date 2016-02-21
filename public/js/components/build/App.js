@@ -24,13 +24,16 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 // Configuration
 var bUseOSC = false;
+var bSimulate = false;
 var bDrawVolumes = true; // If false, draw sensor distances
 var fadeSpeed = 0.2;
 var ambientFadeInSpeed = 0.2;
 var ambientFadeOutSpeed = 1.4;
 
 var frontCircles = [],
-    backCircles = [];
+    frontHeights = [],
+    backCircles = [],
+    backHeights = [];
 
 var now = 0,
     then = 0,
@@ -96,6 +99,28 @@ var App = function (_React$Component) {
 		return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(App)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this), _this.state = {
 			soundsLoaded: 0,
 			sounds: [{ ref: 'ambient', src: 'sounds/ambient.wav' }, { ref: 'back0', src: 'sounds/user1/c0.wav' }, { ref: 'back1', src: 'sounds/user1/e0.wav' }, { ref: 'back2', src: 'sounds/user1/ds0.wav' }, { ref: 'back3', src: 'sounds/user1/b0.wav' }, { ref: 'back4', src: 'sounds/user1/g0.wav' }, { ref: 'back5', src: 'sounds/user1/c1.wav' }, { ref: 'back6', src: 'sounds/user1/e1.wav' }, { ref: 'back7', src: 'sounds/user1/ds1.wav' }, { ref: 'back8', src: 'sounds/user1/b1.wav' }, { ref: 'back9', src: 'sounds/user1/g1.wav' }, { ref: 'back10', src: 'sounds/user1/c2.wav' }, { ref: 'back11', src: 'sounds/user1/e2.wav' }, { ref: 'back12', src: 'sounds/user1/ds2.wav' }, { ref: 'back13', src: 'sounds/user1/b2.wav' }, { ref: 'back14', src: 'sounds/user1/g2.wav' }, { ref: 'front0', src: 'sounds/user2/c00.wav' }, { ref: 'front1', src: 'sounds/user2/e00.wav' }, { ref: 'front2', src: 'sounds/user2/ds00.wav' }, { ref: 'front3', src: 'sounds/user2/b00.wav' }, { ref: 'front4', src: 'sounds/user2/g00.wav' }, { ref: 'front5', src: 'sounds/user2/c11.wav' }, { ref: 'front6', src: 'sounds/user2/e11.wav' }, { ref: 'front7', src: 'sounds/user2/ds11.wav' }, { ref: 'front8', src: 'sounds/user2/b11.wav' }, { ref: 'front9', src: 'sounds/user2/g11.wav' }, { ref: 'front10', src: 'sounds/user2/c22.wav' }, { ref: 'front11', src: 'sounds/user2/e22.wav' }, { ref: 'front12', src: 'sounds/user2/ds22.wav' }, { ref: 'front13', src: 'sounds/user2/b22.wav' }, { ref: 'front14', src: 'sounds/user2/g22.wav' }]
+		}, _this.fetchConfig = function () {
+			_jquery2.default.ajax({
+				url: '/config',
+				method: 'GET',
+				dataType: 'json'
+			}).done(function (config) {
+				bUseOSC = config.bUseOSC;
+				bSimulate = config.bSimulate;
+				if (bUseOSC == false && bSimulate == false) {
+					_this.fetchDistances();
+				}
+			}).fail(function (response) {
+				console.log(response);
+			});
+		}, _this.fetchDistances = function () {
+			_jquery2.default.ajax({
+				url: '/distances',
+				method: 'GET',
+				dataType: 'json'
+			}).done(function (distances) {}).fail(function (response) {
+				console.log(response);
+			});
 		}, _this.initializeSounds = function () {
 			for (var i in _this.state.sounds) {
 				var sound = _this.state.sounds[i];
@@ -130,8 +155,8 @@ var App = function (_React$Component) {
 			delta = (now - then) * 0.001;
 
 			var sensorDistance = canvas.width / App.NUM_SENSORS;
-			var frontHeights = [],
-			    backHeights = [];
+			frontHeights = [];
+			backHeights = [];
 
 			var ctx = _this.ctx;
 			ctx.fillStyle = 'black';
@@ -206,6 +231,7 @@ var App = function (_React$Component) {
 				_this.drawCircle(frontCircles[i]);
 			}
 
+			_this.normalizeHeights();
 			if (bUseOSC) {
 				_this.updateOSC(frontHeights, backHeights);
 			} else {
@@ -332,8 +358,6 @@ var App = function (_React$Component) {
 
 			// Check for touch
 			for (var i = 0; i < frontHeights.length; i++) {
-				frontHeights[i] = Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
-				backHeights[i] = Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
 				if (frontHeights[i] > 0.05 && frontHeights[i] < 0.95 && backHeights[i] > 0.05 && backHeights[i] < 0.95) {
 					isTouching = true;
 					touchingIndexes.push(i);
@@ -415,16 +439,7 @@ var App = function (_React$Component) {
 			this.initializeSounds();
 
 			// Check whether app should send OSC messages (for SuperCollider)
-			_jquery2.default.ajax({
-				url: '/supercollider',
-				method: 'GET'
-			}).done(function (response) {
-				if (typeof response == 'boolean') {
-					bUseOSC = response;
-				}
-			}).fail(function (response) {
-				console.log(response);
-			});
+			this.fetchConfig();
 		}
 	}, {
 		key: 'componentDidUpdate',
@@ -440,6 +455,14 @@ var App = function (_React$Component) {
 			for (var i in this.state.sounds) {
 				var sound = this.state.sounds[i];
 				this.refs[sound.ref].currentTime = 0;
+			}
+		}
+	}, {
+		key: 'normalizeHeights',
+		value: function normalizeHeights() {
+			for (var i = 0; i < frontHeights.length; i++) {
+				frontHeights[i] = Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
+				backHeights[i] = Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
 			}
 		}
 	}]);

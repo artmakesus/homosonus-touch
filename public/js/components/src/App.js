@@ -6,13 +6,16 @@ import $ from 'jquery'
 
 // Configuration
 let bUseOSC = false;
+let bSimulate = false;
 let bDrawVolumes = true; // If false, draw sensor distances
 let fadeSpeed = 0.2;
 let ambientFadeInSpeed = 0.2;
 let ambientFadeOutSpeed = 1.4;
 
 let frontCircles = [],
-    backCircles = [];
+    frontHeights = [],
+    backCircles = [],
+    backHeights = [];
 
 let now = 0, then = 0, delta = 0;
 
@@ -124,16 +127,7 @@ class App extends React.Component {
 		this.initializeSounds();
 
 		// Check whether app should send OSC messages (for SuperCollider)
-		$.ajax({
-			url: '/supercollider',
-			method: 'GET',
-		}).done((response) => {
-			if (typeof(response) == 'boolean') {
-				bUseOSC = response;
-			}
-		}).fail((response) => {
-			console.log(response);
-		});
+		this.fetchConfig();
 	}
 	componentDidUpdate() {
 		if (this.state.soundsLoaded == this.state.sounds.length) {
@@ -141,6 +135,31 @@ class App extends React.Component {
 			this.initializeCanvas();
 		}
 	}
+	fetchConfig = () => {
+		$.ajax({
+			url: '/config',
+			method: 'GET',
+			dataType: 'json',
+		}).done((config) => {
+			bUseOSC = config.bUseOSC;
+			bSimulate = config.bSimulate;
+			if (bUseOSC == false && bSimulate == false) {
+				this.fetchDistances();
+			}
+		}).fail((response) => {
+			console.log(response);
+		});
+	};
+	fetchDistances = () => {
+		$.ajax({
+			url: '/distances',
+			method: 'GET',
+			dataType: 'json',
+		}).done((distances) => {
+		}).fail((response) => {
+			console.log(response);
+		});
+	};
 	initializeSounds = () => {
 		for (let i in this.state.sounds) {
 			let sound = this.state.sounds[i];
@@ -183,8 +202,8 @@ class App extends React.Component {
 		delta = (now - then) * 0.001;
 
 		let sensorDistance = canvas.width / App.NUM_SENSORS;
-		let frontHeights = [],
-			backHeights = [];
+		frontHeights = [];
+		backHeights = [];
 
 		let ctx = this.ctx;
 		ctx.fillStyle = 'black';
@@ -261,6 +280,7 @@ class App extends React.Component {
 			this.drawCircle(frontCircles[i]);
 		}
 
+		this.normalizeHeights();
 		if (bUseOSC) {
 			this.updateOSC(frontHeights, backHeights);
 		} else {
@@ -269,6 +289,12 @@ class App extends React.Component {
 
 		requestAnimationFrame(this.draw);
 	};
+	normalizeHeights() {
+		for (let i = 0; i < frontHeights.length; i++) {
+			frontHeights[i] = Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
+			backHeights[i] = Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
+		}
+	}
 	resize = () => {
 		canvas.width = window.innerWidth;
 		canvas.height = window.innerHeight;
@@ -395,8 +421,6 @@ class App extends React.Component {
 
 		// Check for touch
 		for (let i = 0; i < frontHeights.length; i++) {
-			frontHeights[i] = Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
-			backHeights[i] = Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
 			if (frontHeights[i] > 0.05 && frontHeights[i] < 0.95 && backHeights[i] > 0.05 && backHeights[i] < 0.95) {
 				isTouching = true;
 				touchingIndexes.push(i);
