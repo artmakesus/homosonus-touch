@@ -71,14 +71,8 @@ function processData(data) {
 		// Update front and back heights
 		if (index >= 15 && index < 30) {
 			frontHeights[index - 15] = distance;
-			if (index == 15) {
-				console.log(index, frontHeights[index - 15]);
-			}
 		} else if (index >= 0 && index < 15) {
 			backHeights[index] = distance;
-			if (index == 0) {
-				console.log(index, backHeights[index]);
-			}
 		}
 
 		startIndex = eolIndex + 2;
@@ -224,6 +218,23 @@ if (bSimulate) {
 	}
 
 	app.get('/volumes', function(req, res) {
+		console.log(
+			frontVolumes[0].toFixed(2),
+			frontVolumes[1].toFixed(2),
+			frontVolumes[2].toFixed(2),
+			frontVolumes[3].toFixed(2),
+			frontVolumes[4].toFixed(2),
+			frontVolumes[5].toFixed(2),
+			frontVolumes[6].toFixed(2),
+			frontVolumes[7].toFixed(2),
+			frontVolumes[8].toFixed(2),
+			frontVolumes[9].toFixed(2),
+			frontVolumes[10].toFixed(2),
+			frontVolumes[11].toFixed(2),
+			frontVolumes[12].toFixed(2),
+			frontVolumes[13].toFixed(2),
+			frontVolumes[14].toFixed(2)
+		);
 		res.send({
 			frontVolumes: frontVolumes,
 			backVolumes: backVolumes,
