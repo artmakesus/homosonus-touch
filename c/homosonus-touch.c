@@ -81,6 +81,7 @@ static void init() {
 	server = lo_server_thread_new("57120", serverError);
 	lo_server_thread_add_method(server, "/front", "if", frontHandler, NULL);
 	lo_server_thread_add_method(server, "/back", "if", backHandler, NULL);
+	lo_server_thread_start(server);
 }
 
 static void loadSounds() {
