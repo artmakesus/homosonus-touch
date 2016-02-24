@@ -76,6 +76,7 @@ static void init() {
 	Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 2048);
 
 	signal(SIGINT, signalHandler);
+	signal(SIGTERM, signalHandler);
 
 	server = lo_server_thread_new("57120", serverError);
 	lo_server_thread_add_method(server, "/front", "if", frontHandler, NULL);
