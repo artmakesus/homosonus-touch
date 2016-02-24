@@ -51,10 +51,15 @@ function normalizeDistance(distance) {
 function processData(data) {
 	var EOL = '\r\n';
 
+	// Append incoming data to working buffer
 	dataBuffer = Buffer.concat([dataBuffer, data]);
 
+	// Find the first EOL
 	var startIndex = 0;
 	var eolIndex = dataBuffer.indexOf(EOL, startIndex);
+
+	// If EOL is before the 6th index, look for the next one.
+	// This is because 6 bytes of data needs to appear before EOL.
 	if (eolIndex >= 0 && eolIndex < 6) {
 		dataBuffer = dataBuffer.slice(eolIndex + 2);
 		eolIndex = dataBuffer.indexOf(EOL, startIndex);
@@ -63,20 +68,21 @@ function processData(data) {
 	// If EOL is at index >= 6, then the previous 6 bytes must be the data
 	while (eolIndex >= startIndex + 6) {
 		var index = dataBuffer.readInt16LE(eolIndex - 6);
-		var distance = normalizeDistance(dataBuffer.readFloatLE(eolIndex - 4));
+		var distance = dataBuffer.readFloatLE(eolIndex - 4);
+		var normalizedDistance = normalizeDistance(distance);
 
 		// Update front and back heights
 		if (index >= 15 && index < 30) {
-			frontHeights[index - 15] = distance;
+			frontHeights[index - 15] = normalizedDistance;
 		} else if (index >= 0 && index < 15) {
-			backHeights[index] = distance;
+			backHeights[index] = normalizedDistance;
 		}
 
 		startIndex = eolIndex + 2;
 		eolIndex = dataBuffer.indexOf(EOL, startIndex);
 	}
 
-	// Keep incompvare data for the next round.
+	// Keep incomplete buffer for the next round.
 	var nLeftoverData = dataBuffer.length - startIndex;
 	if (nLeftoverData >= 0) {
 		var nextDataBuffer = new Buffer(nLeftoverData);
