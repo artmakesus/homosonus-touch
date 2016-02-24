@@ -11,7 +11,6 @@ const ambientFadeOutSpeed = 1.4;
 
 // Modules
 const osc = require('node-osc');
-const client = new osc.Client('localhost', 7070);
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
@@ -29,7 +28,7 @@ let frontHeights = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 
 // OSC
 if (bUseOSC) {
-	var oscClient = new osc.Client('127.0.0.1', 57120);
+	var client = new osc.Client('127.0.0.1', 57120);
 }
 
 // Volumes
