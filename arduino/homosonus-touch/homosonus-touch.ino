@@ -46,9 +46,12 @@ void sendDistance(int16_t index) {
 		Serial.println(distanceSensors[index].distanceInMeters);
 	}
 #else
-	Serial.write((const char *) &i, sizeof(i));
-	Serial.write((const char *) &distanceSensors[index].distanceInMeters, sizeof(distanceSensors[index].distanceInMeters));
-	Serial.println();
+	uint8_t buffer[8] = { 0 };
+	memcpy(&buffer[0], (void *) &i, 2);
+	memcpy(&buffer[2], (void *) &distanceSensors[index].distanceInMeters, 4);
+	buffer[6] = '\r';
+	buffer[7] = '\n';
+	Serial.write((const char *) buffer);
 #endif
 	Serial.flush();
 }
