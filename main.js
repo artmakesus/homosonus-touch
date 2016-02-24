@@ -1,6 +1,6 @@
 // Configuration
 var frameRate = 30;
-var bUseOSC = false;
+var bUseOSC = true;
 var bSimulate = false;
 var nDistanceSensors = 30;
 var fadeSpeed = 0.2;
@@ -33,7 +33,7 @@ if (bUseOSC) {
 if (!bSimulate) {
 	var frontVolumes = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	    backVolumes  = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-		ambientVolume = 0;
+	    ambientVolume = 0;
 }
 
 function normalizeDistance(distance) {
@@ -192,7 +192,7 @@ if (bSimulate) {
 			} else {
 				frontVolumes[i] = frontVolumes[i] - delta * fadeSpeed < 0 ? 0 : frontVolumes[i] - delta * fadeSpeed;
 			}
-			client.send('/front', i, ambientVolume);
+			client.send('/front', i, frontVolumes[i]);
 		}
 		for (var i = 0; i < backHeights.length; i++) {
 			if ((isTouching == false || (isTouching && touchingIndexes.indexOf(i) >= 0)) &&
@@ -201,7 +201,7 @@ if (bSimulate) {
 			} else {
 				backVolumes[i] = (backVolumes[i] - delta * fadeSpeed) < 0 ? 0 : backVolumes[i] - delta * fadeSpeed;
 			}
-			client.send('/back', i, ambientVolume);
+			client.send('/back', i, backVolumes[i]);
 		}
 
 		if (isTouching) {
