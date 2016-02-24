@@ -63,6 +63,11 @@ static int backHandler(const char *path, const char *types, lo_arg **argv, int a
 	Mix_VolumeChunk(sounds[index], (int) (volume * 128));
 }
 
+static int ambientHandler(const char *path, const char *types, lo_arg **argv, int argc, void *data, void *user_data) {
+	const float volume = argv[0]->f;
+	Mix_VolumeChunk(sounds[NUM_SOUNDS - 1], (int) (volume * 128));
+}
+
 static void signalHandler() {
 	fprintf(stdout, "Interrupted\n");
 	running = SDL_FALSE;
@@ -81,6 +86,7 @@ static void init() {
 	server = lo_server_thread_new("57120", serverError);
 	lo_server_thread_add_method(server, "/front", "if", frontHandler, NULL);
 	lo_server_thread_add_method(server, "/back", "if", backHandler, NULL);
+	lo_server_thread_add_method(server, "/ambient", "f", ambientHandler, NULL);
 	lo_server_thread_start(server);
 }
 
@@ -102,6 +108,7 @@ static void muteSounds() {
 	for (size_t i = 0; i < NUM_SOUNDS; i++) {
 		Mix_VolumeChunk(sounds[i], 0);
 	}
+	Mix_VolumeChunk(sounds[NUM_SOUNDS - 1], MIX_MAX_VOLUME);
 }
 
 static void playSounds() {
