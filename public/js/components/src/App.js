@@ -7,7 +7,6 @@ import $ from 'jquery'
 // Configuration
 let bUseOSC = false;
 let bSimulate = false;
-let bDrawVolumes = true; // If false, draw sensor distances
 let fadeSpeed = 0.2;
 let ambientFadeInSpeed = 0.2;
 let ambientFadeOutSpeed = 1.4;
@@ -49,8 +48,11 @@ let soundModels = [
 
 let frontCircles = [],
     frontHeights = [],
+    frontVolumes = [],
     backCircles = [],
-    backHeights = [];
+    backHeights = [],
+    backVolumes = [],
+	ambientVolume = 0;
 
 let now = 0, then = 0, delta = 0;
 
@@ -120,7 +122,9 @@ class App extends React.Component {
 	}
 	componentDidUpdate() {
 		if (this.state.soundsLoaded == soundModels.length) {
-			this.resetSounds();
+			if (!bUseOSC) {
+				this.resetSounds();
+			}
 			this.initializeCanvas();
 		}
 	}
@@ -136,10 +140,12 @@ class App extends React.Component {
 			if (bSimulate) {
 				this.initializeSounds();
 			} else {
-				if (bUseOSC == false) {
+				if (bUseOSC) {
+					this.setState({ soundsLoaded: soundModels.length });
+				} else {
 					this.initializeSounds();
-					setInterval(this.fetchVolumes, 33);
 				}
+				setInterval(this.fetchVolumes, 33);
 			}
 		}).fail((response) => {
 			console.log(response);
@@ -150,10 +156,16 @@ class App extends React.Component {
 			url: '/volumes',
 			method: 'GET',
 		}).done((volumes) => {
-			for (let i = 0; i < frontHeights.length; i++) {
-				sounds['front' + i].volume = volumes.frontVolumes[i];
-				sounds['back' + i].volume = volumes.backVolumes[i];
-				sounds['ambient'].volume = volumes.ambientVolume;
+			if (bUseOSC) {
+				frontVolumes = volumes.frontVolumes;
+				backVolumes = volumes.backVolumes;
+				ambientVolume = volumes.ambientVolume;
+			} else {
+				for (let i = 0; i < frontHeights.length; i++) {
+					sounds['front' + i].volume = volumes.frontVolumes[i];
+					sounds['back' + i].volume = volumes.backVolumes[i];
+					sounds['ambient'].volume = volumes.ambientVolume;
+				}
 			}
 		}).fail((response) => {
 			console.log('failed to get volumes');
@@ -252,11 +264,12 @@ class App extends React.Component {
 			ctx.stroke();
 			ctx.closePath();
 
-			let value = bDrawVolumes ? sounds['back' + i].volume :
-			                           Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
-			ctx.font = '16px sans-serif';
-			ctx.fillStyle = 'red';
-			ctx.fillText(value.toFixed(2), x + 8, 24);
+			let value = bUseOSC ? backVolumes[i] : sounds['back' + i].volume;
+			if (!isNaN(value)) {
+				ctx.font = '16px sans-serif';
+				ctx.fillStyle = 'red';
+				ctx.fillText(value.toFixed(2), x + 8, 24);
+			}
 		}
 
 		for (let i in backCircles) {
@@ -272,11 +285,12 @@ class App extends React.Component {
 			ctx.stroke();
 			ctx.closePath();
 
-			let value = bDrawVolumes ? sounds['front' + i].volume :
-			                           Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
-			ctx.font = '16px sans-serif';
-			ctx.fillStyle = 'green';
-			ctx.fillText(value.toFixed(2), x + 8, 48);
+			let value = bUseOSC ? frontVolumes[i] : sounds['front' + i].volume;
+			if (!isNaN(value)) {
+				ctx.font = '16px sans-serif';
+				ctx.fillStyle = 'green';
+				ctx.fillText(value.toFixed(2), x + 8, 48);
+			}
 		}
 
 		for (let i in frontCircles) {
@@ -293,9 +307,11 @@ class App extends React.Component {
 		requestAnimationFrame(this.draw);
 	};
 	normalizeHeights() {
-		for (let i = 0; i < frontHeights.length; i++) {
-			frontHeights[i] = Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
-			backHeights[i] = Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
+		if (bSimulate) {
+			for (let i = 0; i < frontHeights.length; i++) {
+				frontHeights[i] = Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
+				backHeights[i] = Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
+			}
 		}
 	}
 	resize = () => {
@@ -397,26 +413,28 @@ class App extends React.Component {
 		}
 	};
 	updateOSC = (frontHeights, backHeights) => {
-		// Normalize data
-		for (let i = 0; i < frontHeights.length; i++) {
-			frontHeights[i] = Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
-		}
-		for (let i = 0; i < backHeights.length; i++) {
-			backHeights[i] = Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
-		}
+		if (bSimulate) {
+			// Normalize data
+			for (let i = 0; i < frontHeights.length; i++) {
+				frontHeights[i] = Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
+			}
+			for (let i = 0; i < backHeights.length; i++) {
+				backHeights[i] = Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
+			}
 
-		$.ajax({
-			url: '/distances',
-			method: 'POST',
-			data: {
-				frontHeights: JSON.stringify(frontHeights),
-				backHeights: JSON.stringify(backHeights),
-			},
-		}).done(function() {
-			// do nothing
-		}).fail(function(resp) {
-			console.log('Failed to send height data');
-		});
+			$.ajax({
+				url: '/distances',
+				method: 'POST',
+				data: {
+					frontHeights: JSON.stringify(frontHeights),
+					backHeights: JSON.stringify(backHeights),
+				},
+			}).done(function() {
+				// do nothing
+			}).fail(function(resp) {
+				console.log('Failed to send height data');
+			});
+		}
 	};
 	updateSounds = (frontHeights, backHeights) => {
 		if (bSimulate) {

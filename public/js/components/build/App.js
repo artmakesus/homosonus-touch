@@ -25,7 +25,6 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 // Configuration
 var bUseOSC = false;
 var bSimulate = false;
-var bDrawVolumes = true; // If false, draw sensor distances
 var fadeSpeed = 0.2;
 var ambientFadeInSpeed = 0.2;
 var ambientFadeOutSpeed = 1.4;
@@ -35,8 +34,11 @@ var soundModels = [{ ref: 'ambient', src: 'sounds/ambient.wav' }, { ref: 'back0'
 
 var frontCircles = [],
     frontHeights = [],
+    frontVolumes = [],
     backCircles = [],
-    backHeights = [];
+    backHeights = [],
+    backVolumes = [],
+    ambientVolume = 0;
 
 var now = 0,
     then = 0,
@@ -113,10 +115,12 @@ var App = function (_React$Component) {
 				if (bSimulate) {
 					_this.initializeSounds();
 				} else {
-					if (bUseOSC == false) {
+					if (bUseOSC) {
+						_this.setState({ soundsLoaded: soundModels.length });
+					} else {
 						_this.initializeSounds();
-						setInterval(_this.fetchVolumes, 33);
 					}
+					setInterval(_this.fetchVolumes, 33);
 				}
 			}).fail(function (response) {
 				console.log(response);
@@ -126,10 +130,16 @@ var App = function (_React$Component) {
 				url: '/volumes',
 				method: 'GET'
 			}).done(function (volumes) {
-				for (var i = 0; i < frontHeights.length; i++) {
-					sounds['front' + i].volume = volumes.frontVolumes[i];
-					sounds['back' + i].volume = volumes.backVolumes[i];
-					sounds['ambient'].volume = volumes.ambientVolume;
+				if (bUseOSC) {
+					frontVolumes = volumes.frontVolumes;
+					backVolumes = volumes.backVolumes;
+					ambientVolume = volumes.ambientVolume;
+				} else {
+					for (var i = 0; i < frontHeights.length; i++) {
+						sounds['front' + i].volume = volumes.frontVolumes[i];
+						sounds['back' + i].volume = volumes.backVolumes[i];
+						sounds['ambient'].volume = volumes.ambientVolume;
+					}
 				}
 			}).fail(function (response) {
 				console.log('failed to get volumes');
@@ -219,10 +229,12 @@ var App = function (_React$Component) {
 				ctx.stroke();
 				ctx.closePath();
 
-				var value = bDrawVolumes ? sounds['back' + i].volume : Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
-				ctx.font = '16px sans-serif';
-				ctx.fillStyle = 'red';
-				ctx.fillText(value.toFixed(2), x + 8, 24);
+				var value = bUseOSC ? backVolumes[i] : sounds['back' + i].volume;
+				if (!isNaN(value)) {
+					ctx.font = '16px sans-serif';
+					ctx.fillStyle = 'red';
+					ctx.fillText(value.toFixed(2), x + 8, 24);
+				}
 			}
 
 			for (var i in backCircles) {
@@ -238,10 +250,12 @@ var App = function (_React$Component) {
 				ctx.stroke();
 				ctx.closePath();
 
-				var value = bDrawVolumes ? sounds['front' + i].volume : Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
-				ctx.font = '16px sans-serif';
-				ctx.fillStyle = 'green';
-				ctx.fillText(value.toFixed(2), x + 8, 48);
+				var value = bUseOSC ? frontVolumes[i] : sounds['front' + i].volume;
+				if (!isNaN(value)) {
+					ctx.font = '16px sans-serif';
+					ctx.fillStyle = 'green';
+					ctx.fillText(value.toFixed(2), x + 8, 48);
+				}
 			}
 
 			for (var i in frontCircles) {
@@ -349,26 +363,28 @@ var App = function (_React$Component) {
 					break;
 			}
 		}, _this.updateOSC = function (frontHeights, backHeights) {
-			// Normalize data
-			for (var i = 0; i < frontHeights.length; i++) {
-				frontHeights[i] = Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
-			}
-			for (var i = 0; i < backHeights.length; i++) {
-				backHeights[i] = Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
-			}
-
-			_jquery2.default.ajax({
-				url: '/distances',
-				method: 'POST',
-				data: {
-					frontHeights: JSON.stringify(frontHeights),
-					backHeights: JSON.stringify(backHeights)
+			if (bSimulate) {
+				// Normalize data
+				for (var i = 0; i < frontHeights.length; i++) {
+					frontHeights[i] = Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
 				}
-			}).done(function () {
-				// do nothing
-			}).fail(function (resp) {
-				console.log('Failed to send height data');
-			});
+				for (var i = 0; i < backHeights.length; i++) {
+					backHeights[i] = Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
+				}
+
+				_jquery2.default.ajax({
+					url: '/distances',
+					method: 'POST',
+					data: {
+						frontHeights: JSON.stringify(frontHeights),
+						backHeights: JSON.stringify(backHeights)
+					}
+				}).done(function () {
+					// do nothing
+				}).fail(function (resp) {
+					console.log('Failed to send height data');
+				});
+			}
 		}, _this.updateSounds = function (frontHeights, backHeights) {
 			if (bSimulate) {
 				var isTouching = false;
@@ -453,7 +469,9 @@ var App = function (_React$Component) {
 		key: 'componentDidUpdate',
 		value: function componentDidUpdate() {
 			if (this.state.soundsLoaded == soundModels.length) {
-				this.resetSounds();
+				if (!bUseOSC) {
+					this.resetSounds();
+				}
 				this.initializeCanvas();
 			}
 		}
@@ -468,9 +486,11 @@ var App = function (_React$Component) {
 	}, {
 		key: 'normalizeHeights',
 		value: function normalizeHeights() {
-			for (var i = 0; i < frontHeights.length; i++) {
-				frontHeights[i] = Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
-				backHeights[i] = Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
+			if (bSimulate) {
+				for (var i = 0; i < frontHeights.length; i++) {
+					frontHeights[i] = Math.max(0, Math.min(1, (canvas.height - frontHeights[i]) / canvas.height));
+					backHeights[i] = Math.max(0, Math.min(1, (canvas.height - backHeights[i]) / canvas.height));
+				}
 			}
 		}
 	}]);
