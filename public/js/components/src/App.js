@@ -406,7 +406,7 @@ class App extends React.Component {
 		}
 
 		$.ajax({
-			url: '/data',
+			url: '/distances',
 			method: 'POST',
 			data: {
 				frontHeights: JSON.stringify(frontHeights),

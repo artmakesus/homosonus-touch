@@ -358,7 +358,7 @@ var App = function (_React$Component) {
 			}
 
 			_jquery2.default.ajax({
-				url: '/data',
+				url: '/distances',
 				method: 'POST',
 				data: {
 					frontHeights: JSON.stringify(frontHeights),
