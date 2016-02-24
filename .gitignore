@@ -1,4 +1,6 @@
 .DS_STORE
 *.swp
 *~
+*.out
+*.log
 node_modules
