@@ -54,13 +54,13 @@ static void serverError(int num, const char *msg, const char *path) {
 static int frontHandler(const char *path, const char *types, lo_arg **argv, int argc, void *data, void *user_data) {
 	const int index = argv[0]->i;
 	const float volume = argv[1]->f;
-	Mix_VolumeChunk(sounds[index + 15], volume);
+	Mix_VolumeChunk(sounds[index + 15], (int) (volume * 128));
 }
 
 static int backHandler(const char *path, const char *types, lo_arg **argv, int argc, void *data, void *user_data) {
 	const int index = argv[0]->i;
 	const float volume = argv[1]->f;
-	Mix_VolumeChunk(sounds[index], volume);
+	Mix_VolumeChunk(sounds[index], (int) (volume * 128));
 }
 
 static void signalHandler() {
