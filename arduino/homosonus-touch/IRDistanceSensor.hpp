@@ -10,6 +10,7 @@ public:
 	IRDistanceSensor();
 	IRDistanceSensor(int outputPin);
 	void init();
+	void init(int outputPin);
 	void update();
 
 private:

@@ -22,6 +22,11 @@ void IRDistanceSensor::init() {
 	pinMode(mOutputPin, INPUT);
 }
 
+void IRDistanceSensor::init(int outputPin) {
+	mOutputPin = outputPin;
+	pinMode(mOutputPin, INPUT);
+}
+
 void IRDistanceSensor::update() {
 	// Warm-up
 	analogRead(mOutputPin);
